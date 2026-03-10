@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vermogenplanner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Prevent iOS zoom on input focus */
+        input[type="number"], select { font-size: 16px; }
+        @media (min-width: 601px) {
+            input[type="number"] { font-size: 0.95rem; }
+            select { font-size: 1rem; }
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            background: #0c1a0c;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+            -webkit-text-size-adjust: 100%;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* Field hockey pitch background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                /* pitch lines */
+                linear-gradient(90deg, transparent 49.7%, rgba(255,255,255,0.06) 49.7%, rgba(255,255,255,0.06) 50.3%, transparent 50.3%),
+                linear-gradient(0deg, transparent 49.7%, rgba(255,255,255,0.04) 49.7%, rgba(255,255,255,0.04) 50.3%, transparent 50.3%),
+                /* shooting circle arcs */
+                radial-gradient(ellipse 320px 180px at 50% 15%, transparent 58%, rgba(255,255,255,0.05) 58%, rgba(255,255,255,0.05) 60%, transparent 60%),
+                radial-gradient(ellipse 320px 180px at 50% 85%, transparent 58%, rgba(255,255,255,0.05) 58%, rgba(255,255,255,0.05) 60%, transparent 60%),
+                /* grass texture */
+                repeating-linear-gradient(0deg, rgba(34,120,34,0.08) 0px, rgba(20,80,20,0.05) 3px, rgba(34,120,34,0.08) 6px),
+                /* base green gradient */
+                linear-gradient(160deg, #0d2818 0%, #102e1a 30%, #0a1f10 60%, #0d2818 100%);
+            z-index: 0;
+        }
+
+        /* Floating hockey balls */
+        .ball {
+            position: fixed;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #fff, #e0e0e0 50%, #bbb);
+            opacity: 0.08;
+            z-index: 0;
+            animation: floatBall 18s ease-in-out infinite;
+        }
+        .ball:nth-child(1) { top: 8%; left: 12%; animation-delay: 0s; animation-duration: 22s; }
+        .ball:nth-child(2) { top: 25%; right: 8%; animation-delay: -4s; animation-duration: 18s; width: 22px; height: 22px; }
+        .ball:nth-child(3) { bottom: 20%; left: 6%; animation-delay: -8s; animation-duration: 25s; }
+        .ball:nth-child(4) { top: 60%; right: 15%; animation-delay: -12s; animation-duration: 20s; width: 18px; height: 18px; }
+        .ball:nth-child(5) { bottom: 10%; right: 30%; animation-delay: -6s; animation-duration: 16s; }
+
+        @keyframes floatBall {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -20px) scale(1.1); }
+            50% { transform: translate(-15px, -40px) scale(0.95); }
+            75% { transform: translate(20px, -10px) scale(1.05); }
+        }
+
+        /* Accent glow blobs */
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+            opacity: 0.15;
+        }
+        .glow-1 { width: 500px; height: 500px; background: #22c55e; top: -10%; left: -10%; }
+        .glow-2 { width: 400px; height: 400px; background: #16a34a; bottom: -10%; right: -5%; opacity: 0.1; }
+        .glow-3 { width: 300px; height: 300px; background: #4ade80; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0.06; }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* Glassmorphism card */
+        .glass {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .main-card {
+            padding: 35px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .header-icon {
+            font-size: 2.4rem;
+            line-height: 1;
+        }
+        .header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #4ade80, #22c55e, #86efac);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 2px;
+        }
+        .header-text { flex: 1; }
+        .year-select-wrap {
+            flex-shrink: 0;
+        }
+        .year-select-wrap select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding: 10px 38px 10px 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(74,222,128,0.25);
+            border-radius: 12px;
+            color: #4ade80;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%234ade80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+        .year-select-wrap select:hover {
+            border-color: rgba(74,222,128,0.5);
+        }
+        .year-select-wrap select:focus {
+            border-color: rgba(74,222,128,0.6);
+            box-shadow: 0 0 0 3px rgba(74,222,128,0.12);
+        }
+        .year-select-wrap select option {
+            background: #1e293b;
+            color: white;
+        }
+
+        /* Stats row */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .stat-box {
+            padding: 22px;
+            border-radius: 16px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-box:hover { transform: translateY(-2px); }
+        .stat-box.primary {
+            background: linear-gradient(135deg, rgba(34,197,94,0.3), rgba(22,163,74,0.2));
+            border: 1px solid rgba(74,222,128,0.25);
+        }
+        .stat-box.secondary {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.5);
+            font-weight: 500;
+        }
+        .stat-num {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 800;
+            margin-top: 6px;
+            word-break: break-word;
+        }
+        .stat-num.green { color: #4ade80; }
+        .stat-num.red { color: #f87171; }
+        .stat-num.blue { color: #60a5fa; }
+
+        /* Input grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .section {
+            padding: 22px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .section:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(255,255,255,0.14);
+        }
+        .section.debt {
+            border-color: rgba(248,113,113,0.3);
+            background: rgba(248,113,113,0.04);
+        }
+        .section.debt:hover {
+            background: rgba(248,113,113,0.08);
+        }
+        .section h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #86efac;
+            margin-bottom: 16px;
+        }
+        .section.debt h3 { color: #fca5a5; }
+
+        .input-group { margin-bottom: 14px; }
+        .input-group:last-child { margin-bottom: 0; }
+        .input-group label {
+            display: block;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 0.95rem;
+            font-family: 'DM Sans', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+        .input-group input::-webkit-outer-spin-button,
+        .input-group input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .input-group input:focus {
+            border-color: rgba(74,222,128,0.5);
+            box-shadow: 0 0 0 3px rgba(74,222,128,0.1);
+        }
+        .section.debt .input-group input:focus {
+            border-color: rgba(248,113,113,0.5);
+            box-shadow: 0 0 0 3px rgba(248,113,113,0.1);
+        }
+
+        .note {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.35);
+            font-style: italic;
+            margin-top: 12px;
+            line-height: 1.5;
+        }
+        .tier-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* Optimize button */
+        .optimize-wrap {
+            margin: 28px 0;
+            text-align: center;
+            position: relative;
+        }
+        #optimizeBtn {
+            position: relative;
+            padding: 18px 44px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.15s;
+            isolation: isolate;
+        }
+        #optimizeBtn:hover { transform: scale(1.04); }
+        #optimizeBtn:active { transform: scale(0.97); }
+        .btn-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #16a34a, #0d9440, #22c55e);
+            border-radius: 16px;
+            z-index: 0;
+            transition: 0.3s;
+        }
+        #optimizeBtn:hover .btn-bg {
+            background: linear-gradient(135deg, #22c55e, #16a34a, #15803d);
+        }
+        .btn-shine {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.2) 55%, transparent 60%);
+            background-size: 250% 100%;
+            background-position: 100% 0;
+            border-radius: 16px;
+            z-index: 1;
+            transition: none;
+        }
+        #optimizeBtn.flash .btn-shine {
+            animation: shineSwipe 0.6s ease-out;
+        }
+        @keyframes shineSwipe {
+            0% { background-position: 100% 0; }
+            100% { background-position: -50% 0; }
+        }
+        .btn-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-icon {
+            font-size: 1.5rem;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        #optimizeBtn.computing .btn-icon {
+            animation: slapStick 0.4s ease-in-out infinite;
+        }
+        @keyframes slapStick {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(30deg); }
+        }
+        #optimizeBtn.scored .btn-icon {
+            animation: goalCelly 0.6s ease-out;
+        }
+        @keyframes goalCelly {
+            0% { transform: rotate(0) scale(1); }
+            30% { transform: rotate(-20deg) scale(1.4); }
+            60% { transform: rotate(15deg) scale(1.2); }
+            100% { transform: rotate(0) scale(1); }
+        }
+        #confettiCanvas {
+            position: absolute;
+            inset: -150px -100px;
+            width: calc(100% + 200px);
+            height: calc(100% + 300px);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Result card */
+        .optimize-result {
+            display: none;
+            margin-top: 18px;
+            padding: 22px 28px;
+            border-radius: 16px;
+            background: rgba(74,222,128,0.08);
+            border: 1px solid rgba(74,222,128,0.2);
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: resultSlide 0.5s cubic-bezier(.17,.67,.28,1.2);
+        }
+        .optimize-result.show { display: block; }
+        @keyframes resultSlide {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .result-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #4ade80;
+            margin-bottom: 10px;
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 20px;
+        }
+        .result-item {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .result-item strong {
+            color: white;
+            font-weight: 600;
+        }
+        .result-diff {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.9rem;
+            color: white;
+        }
+        .result-diff .amount {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: #4ade80;
+        }
+        .result-apply {
+            margin-top: 14px;
+            padding: 10px 20px;
+            background: rgba(74,222,128,0.15);
+            border: 1px solid rgba(74,222,128,0.3);
+            border-radius: 10px;
+            color: #4ade80;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .result-apply:hover {
+            background: rgba(74,222,128,0.25);
+            transform: translateY(-1px);
+        }
+
+        /* Income bar */
+        .income-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 22px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(251,191,36,0.04));
+            border: 1px solid rgba(251,191,36,0.2);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .income-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #fbbf24;
+            white-space: nowrap;
+        }
+        .income-icon { font-size: 1.3rem; }
+        .income-input-wrap {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(251,191,36,0.25);
+            border-radius: 10px;
+            padding: 0 12px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .income-input-wrap:focus-within {
+            border-color: rgba(251,191,36,0.5);
+            box-shadow: 0 0 0 3px rgba(251,191,36,0.1);
+        }
+        .income-euro {
+            color: #fbbf24;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .income-input-wrap input {
+            width: 100px;
+            padding: 8px 8px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            outline: none;
+        }
+        .income-remaining {
+            margin-left: auto;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 5px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .income-remaining.positive {
+            color: #4ade80;
+            background: rgba(74,222,128,0.1);
+        }
+        .income-remaining.negative {
+            color: #f87171;
+            background: rgba(248,113,113,0.1);
+        }
+        .income-remaining.zero {
+            color: #fbbf24;
+            background: rgba(251,191,36,0.1);
+        }
+        .raise-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 8px;
+            padding-left: 16px;
+            border-left: 1px solid rgba(255,255,255,0.08);
+        }
+        .raise-label {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.45);
+            white-space: nowrap;
+        }
+        .raise-input-wrap {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(74,222,128,0.2);
+            border-radius: 10px;
+            padding: 0 10px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .raise-input-wrap:focus-within {
+            border-color: rgba(74,222,128,0.5);
+            box-shadow: 0 0 0 3px rgba(74,222,128,0.1);
+        }
+        .raise-input-wrap input {
+            width: 52px;
+            padding: 8px 4px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 0.95rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            outline: none;
+            text-align: right;
+        }
+        .raise-pct {
+            color: #4ade80;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        /* Allocation pie section */
+        .allocation-section {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 22px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 20px;
+        }
+        .allocation-chart-wrap {
+            width: 160px;
+            height: 160px;
+            flex-shrink: 0;
+        }
+        .allocation-legend {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .legend-label {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.6);
+            flex: 1;
+        }
+        .legend-value {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: white;
+        }
+        .legend-pct {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.35);
+            width: 42px;
+            text-align: right;
+        }
+        .legend-bar-track {
+            width: 60px;
+            height: 5px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .legend-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s cubic-bezier(.17,.67,.28,1);
+        }
+
+        /* Chart area */
+        .chart-wrap {
+            height: 380px;
+            padding: 18px;
+            border-radius: 16px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.25);
+        }
+
+        /* ─── RESPONSIVE ─── */
+
+        /* Tablet: 601–900px */
+        @media (max-width: 900px) {
+            .container { padding: 20px 14px; }
+            .main-card { padding: 26px; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .grid { grid-template-columns: 1fr 1fr; }
+            .result-grid { gap: 6px 14px; }
+            .legend-bar-track { display: none; }
+        }
+
+        /* Large phones: 601–768px */
+        @media (max-width: 768px) {
+            .header { flex-wrap: wrap; gap: 12px; }
+            .year-select-wrap { order: 3; width: 100%; }
+            .year-select-wrap select { width: 100%; }
+            .income-bar { flex-wrap: wrap; gap: 12px; }
+            .raise-wrap {
+                margin-left: 0;
+                padding-left: 0;
+                border-left: none;
+                padding-top: 10px;
+                border-top: 1px solid rgba(255,255,255,0.08);
+                width: 100%;
+            }
+            .income-remaining { margin-left: 0; width: 100%; text-align: center; }
+            .optimize-result { max-width: 100%; padding: 18px 20px; }
+        }
+
+        /* Small phones: ≤600px */
+        @media (max-width: 600px) {
+            .container { padding: 12px 8px; }
+            .main-card { padding: 16px; border-radius: 16px; }
+            .header-icon { font-size: 1.8rem; }
+            .header h1 { font-size: 1.3rem; }
+            .header p { font-size: 0.78rem; }
+
+            .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .stat-box { padding: 14px 10px; border-radius: 12px; }
+            .stat-label { font-size: 0.65rem; letter-spacing: 0.04em; }
+            .stat-num { font-size: 1.2rem; }
+
+            .grid { grid-template-columns: 1fr; gap: 12px; }
+            .section { padding: 16px; border-radius: 12px; }
+            .section h3 { font-size: 0.8rem; margin-bottom: 12px; }
+            .input-group input { padding: 9px 12px; font-size: 0.9rem; }
+            .tier-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+            .income-bar { padding: 14px 16px; border-radius: 12px; flex-direction: column; align-items: stretch; gap: 10px; }
+            .income-label { font-size: 0.82rem; }
+            .income-input-wrap { width: 100%; }
+            .income-input-wrap input { width: 100%; }
+            .raise-wrap { flex-wrap: wrap; width: 100%; margin-left: 0; padding-left: 0; border-left: none; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+            .raise-input-wrap { flex-shrink: 0; }
+            .income-remaining { margin-left: 0; text-align: center; }
+
+            .allocation-section { flex-direction: column; padding: 16px; gap: 16px; }
+            .allocation-chart-wrap { width: 140px; height: 140px; margin: 0 auto; }
+            .legend-item { gap: 6px; }
+            .legend-label { font-size: 0.75rem; }
+            .legend-value { font-size: 0.82rem; }
+            .legend-pct { width: 36px; font-size: 0.7rem; }
+            .legend-bar-track { display: none; }
+
+            #optimizeBtn { padding: 14px 28px; font-size: 0.95rem; border-radius: 12px; }
+            .btn-icon { font-size: 1.2rem; }
+            .optimize-result { padding: 16px; border-radius: 12px; }
+            .result-title { font-size: 0.9rem; }
+            .result-grid { grid-template-columns: 1fr; gap: 6px; }
+            .result-item { font-size: 0.8rem; }
+            .result-diff { font-size: 0.85rem; }
+            .result-diff .amount { font-size: 1rem; }
+
+            .chart-wrap { height: 260px; padding: 12px; border-radius: 12px; }
+
+            .footer { font-size: 0.65rem; margin-top: 14px; }
+
+            /* Tone down BG effects on mobile for perf */
+            .glow { display: none; }
+            .ball { display: none; }
+        }
+
+        /* Very small screens: ≤380px */
+        @media (max-width: 380px) {
+            .main-card { padding: 12px; }
+            .stats { grid-template-columns: 1fr; }
+            .stat-num { font-size: 1.1rem; }
+            .header h1 { font-size: 1.15rem; }
+            .tier-row { grid-template-columns: 1fr; }
+            .chart-wrap { height: 220px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Background decorations -->
+<div class="ball"></div><div class="ball"></div><div class="ball"></div><div class="ball"></div><div class="ball"></div>
+<div class="glow glow-1"></div><div class="glow glow-2"></div><div class="glow glow-3"></div>
+
+<div class="container">
+    <div class="glass main-card">
+
+        <div class="header">
+            <div class="header-icon">🏑</div>
+            <div class="header-text">
+                <h1>Vermogenplanner</h1>
+                <p id="headerSub">5-jaar projectie — schuld afbetalen &amp; vermogen opbouwen</p>
+            </div>
+            <div class="year-select-wrap">
+                <select id="yearSelect" onchange="run()">
+                    <option value="1">1 jaar</option>
+                    <option value="2">2 jaar</option>
+                    <option value="3">3 jaar</option>
+                    <option value="5" selected>5 jaar</option>
+                    <option value="7">7 jaar</option>
+                    <option value="10">10 jaar</option>
+                    <option value="15">15 jaar</option>
+                    <option value="20">20 jaar</option>
+                    <option value="30">30 jaar</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="income-bar">
+            <div class="income-label">
+                <span class="income-icon">💰</span>
+                <span>Vrij besteedbaar per maand</span>
+            </div>
+            <div class="income-input-wrap">
+                <span class="income-euro">€</span>
+                <input type="number" id="freeIncome" value="1200" oninput="run()">
+            </div>
+            <div class="raise-wrap">
+                <span class="raise-label">📈 Jaarlijkse loonsverhoging</span>
+                <div class="raise-input-wrap">
+                    <input type="number" id="raiseRate" value="2" step="0.5" oninput="run()">
+                    <span class="raise-pct">%</span>
+                </div>
+            </div>
+            <div class="income-remaining" id="incomeRemaining"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box primary">
+                <span class="stat-label">Netto vermogen (5 jaar)</span>
+                <span id="statWealth" class="stat-num green">€0</span>
+            </div>
+            <div class="stat-box secondary">
+                <span class="stat-label">Schuld afgelost na</span>
+                <span id="statDebtFree" class="stat-num red">—</span>
+            </div>
+            <div class="stat-box secondary">
+                <span class="stat-label">Totaal spaargeld</span>
+                <span id="statCash" class="stat-num blue">€0</span>
+            </div>
+            <div class="stat-box secondary">
+                <span class="stat-label">Inkomen einde periode</span>
+                <span id="statEndIncome" class="stat-num" style="color: #fbbf24;">€0</span>
+            </div>
+        </div>
+
+        <!-- Pie chart allocation -->
+        <div class="allocation-section">
+            <div class="allocation-chart-wrap">
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div class="allocation-legend" id="allocationLegend"></div>
+        </div>
+
+        <div class="grid">
+            <div class="section">
+                <h3>🏦 Betaalrekening</h3>
+                <div class="input-group"><label>Startbedrag (€)</label><input type="number" id="revInit" value="8000" oninput="run()"></div>
+                <div class="input-group"><label>Maandelijkse storting (€)</label><input type="number" id="revMo" value="200" oninput="run()"></div>
+                <div class="tier-row">
+                    <div class="input-group"><label>Rente t/m drempel (%)</label><input type="number" id="revRate1" value="2.0" step="0.1" oninput="run()"></div>
+                    <div class="input-group"><label>Drempel (€)</label><input type="number" id="revTier" value="2000" step="100" oninput="run()"></div>
+                </div>
+                <div class="input-group"><label>Rente boven drempel (%)</label><input type="number" id="revRate2" value="1.0" step="0.1" oninput="run()"></div>
+            </div>
+
+            <div class="section">
+                <h3>📈 Depositorekening</h3>
+                <div class="input-group"><label>Startbedrag (€)</label><input type="number" id="extInit" value="5000" oninput="run()"></div>
+                <div class="input-group"><label>Maandelijkse storting (€)</label><input type="number" id="extMo" value="400" oninput="run()"></div>
+                <div class="input-group"><label>Rente per jaar (%)</label><input type="number" id="extRate" value="2.0" step="0.1" oninput="run()"></div>
+            </div>
+
+            <div class="section debt">
+                <h3>🎓 DUO-schuld</h3>
+                <div class="input-group"><label>Openstaand bedrag (€)</label><input type="number" id="debtInit" value="30000" oninput="run()"></div>
+                <div class="input-group"><label>Maandelijkse aflossing (€)</label><input type="number" id="debtMo" value="300" oninput="run()"></div>
+                <div class="input-group"><label>Rente per jaar (%)</label><input type="number" id="debtRate" value="2.57" step="0.01" oninput="run()"></div>
+                <p class="note">Na aflossing gaat het maandbedrag automatisch naar je betaalrekening.</p>
+            </div>
+        </div>
+
+        <!-- OPTIMIZE BUTTON -->
+        <div class="optimize-wrap">
+            <button id="optimizeBtn" onclick="optimize()">
+                <span class="btn-bg"></span>
+                <span class="btn-shine"></span>
+                <span class="btn-content">
+                    <span class="btn-icon">🏑</span>
+                    <span class="btn-text">Bereken beste strategie</span>
+                </span>
+                <canvas id="confettiCanvas"></canvas>
+            </button>
+            <div id="optimizeResult" class="optimize-result"></div>
+        </div>
+
+        <div class="chart-wrap">
+            <canvas id="strategyChart"></canvas>
+        </div>
+
+    </div>
+</div>
+
+<script>
+let chart, pieChart;
+function run() {
+    const years = parseInt(document.getElementById('yearSelect').value) || 5;
+    const totalMonths = years * 12;
+    const labels = Array.from({length: totalMonths + 1}, (_, i) => i);
+
+    // Update header subtitle and stat label
+    document.getElementById('headerSub').textContent = years + '-jaar projectie — schuld afbetalen & vermogen opbouwen';
+    document.querySelector('.stat-box.primary .stat-label').textContent = 'Netto vermogen (' + years + ' jaar)';
+
+    let rev = parseFloat(document.getElementById('revInit').value) || 0;
+    let ext = parseFloat(document.getElementById('extInit').value) || 0;
+    let debt = parseFloat(document.getElementById('debtInit').value) || 0;
+
+    const revMoBase = parseFloat(document.getElementById('revMo').value) || 0;
+    const extMo = parseFloat(document.getElementById('extMo').value) || 0;
+    const debtMo = parseFloat(document.getElementById('debtMo').value) || 0;
+    const raiseRate = parseFloat(document.getElementById('raiseRate').value) || 0;
+
+    const rR1 = Math.pow(1 + (parseFloat(document.getElementById('revRate1').value)/100), 1/12) - 1;
+    const rR2 = Math.pow(1 + (parseFloat(document.getElementById('revRate2').value)/100), 1/12) - 1;
+    const revTier = parseFloat(document.getElementById('revTier').value) || 0;
+    const eR = Math.pow(1 + (parseFloat(document.getElementById('extRate').value)/100), 1/12) - 1;
+    const dR = Math.pow(1 + (parseFloat(document.getElementById('debtRate').value)/100), 1/12) - 1;
+
+    let wealthHist = [], debtHist = [], assetHist = [];
+    let debtFreeMonth = null;
+
+    // If there's no debt at all, mark as already free
+    if (debt <= 0) debtFreeMonth = 0;
+
+    for (let m = 0; m <= totalMonths; m++) {
+        wealthHist.push(Math.round(rev + ext - debt));
+        debtHist.push(Math.round(debt));
+        assetHist.push(Math.round(rev + ext));
+
+        if (m < totalMonths) {
+            // Annual raise: contributions grow each year
+            const yearIndex = Math.floor(m / 12);
+            const raiseFactor = Math.pow(1 + raiseRate / 100, yearIndex);
+            const curRevMoScaled = revMoBase * raiseFactor;
+            const curExtMoScaled = extMo * raiseFactor;
+            const curDebtMoScaled = debtMo * raiseFactor;
+
+            let currentRevMo = curRevMoScaled;
+
+            // Tiered interest: rate1 on first revTier, rate2 on the rest
+            const tierPart = Math.min(rev, revTier);
+            const overPart = Math.max(rev - revTier, 0);
+            rev += tierPart * rR1 + overPart * rR2;
+            ext += ext * eR;
+
+            if (debt > 0) {
+                debt = (debt * (1 + dR)) - curDebtMoScaled;
+                if (debt <= 0) {
+                    debt = 0;
+                    if (debtFreeMonth === null) debtFreeMonth = m + 1;
+                }
+            } else {
+                currentRevMo += curDebtMoScaled;
+            }
+
+            rev += currentRevMo;
+            ext += curExtMoScaled;
+        }
+    }
+
+    // Calculate beyond 60 months if debt not yet paid off
+    let debtFreeText;
+    if (debtFreeMonth !== null && debtFreeMonth === 0) {
+        debtFreeText = 'Geen schuld';
+    } else if (debtFreeMonth !== null) {
+        const years = Math.floor(debtFreeMonth / 12);
+        const months = debtFreeMonth % 12;
+        if (years > 0 && months > 0) {
+            debtFreeText = years + ' jr, ' + months + ' mnd';
+        } else if (years > 0) {
+            debtFreeText = years + ' jaar';
+        } else {
+            debtFreeText = months + ' maanden';
+        }
+    } else {
+        // Simulate further to find the actual month
+        let simDebt = debt; // debt at end of chart
+        let extraMonth = totalMonths;
+        const maxSim = 600; // up to 50 years
+        while (simDebt > 0 && extraMonth < maxSim) {
+            const rf = Math.pow(1 + raiseRate / 100, Math.floor(extraMonth / 12));
+            simDebt = (simDebt * (1 + dR)) - (debtMo * rf);
+            extraMonth++;
+            if (simDebt <= 0) {
+                debtFreeMonth = extraMonth;
+                break;
+            }
+        }
+        if (debtFreeMonth !== null) {
+            const years = Math.floor(debtFreeMonth / 12);
+            const months = debtFreeMonth % 12;
+            if (years > 0 && months > 0) {
+                debtFreeText = years + ' jr, ' + months + ' mnd';
+            } else if (years > 0) {
+                debtFreeText = years + ' jaar';
+            } else {
+                debtFreeText = months + ' maanden';
+            }
+        } else {
+            // Truly never pays off (payment < interest)
+            debtFreeText = 'Aflossing te laag';
+        }
+    }
+
+    document.getElementById('statWealth').innerText = '€' + wealthHist[totalMonths].toLocaleString('nl-NL');
+    document.getElementById('statDebtFree').innerText = debtFreeText;
+    document.getElementById('statCash').innerText = '€' + assetHist[totalMonths].toLocaleString('nl-NL');
+
+    // End-of-period income
+    const endRaiseFactor = Math.pow(1 + raiseRate / 100, years);
+    const freeIncome = parseFloat(document.getElementById('freeIncome').value) || 0;
+    const endIncome = Math.round(freeIncome * endRaiseFactor);
+    document.getElementById('statEndIncome').innerText = '€' + endIncome.toLocaleString('nl-NL') + '/mnd';
+
+    // ─── INCOME REMAINING ───
+    const allocated = revMoBase + extMo + debtMo;
+    const remaining = freeIncome - allocated;
+    const remEl = document.getElementById('incomeRemaining');
+    if (remaining > 0) {
+        remEl.textContent = '€' + remaining.toLocaleString('nl-NL') + ' over';
+        remEl.className = 'income-remaining positive';
+    } else if (remaining < 0) {
+        remEl.textContent = '€' + Math.abs(remaining).toLocaleString('nl-NL') + ' tekort';
+        remEl.className = 'income-remaining negative';
+    } else {
+        remEl.textContent = 'Precies verdeeld';
+        remEl.className = 'income-remaining zero';
+    }
+
+    // ─── PIE CHART ───
+    const pieData = [];
+    const pieLabels = [];
+    const pieColors = [];
+    const pieBorders = [];
+
+    if (revMoBase > 0) { pieLabels.push('Betaalrekening'); pieData.push(revMoBase); pieColors.push('rgba(96,165,250,0.8)'); pieBorders.push('rgba(96,165,250,1)'); }
+    if (extMo > 0) { pieLabels.push('Depositorekening'); pieData.push(extMo); pieColors.push('rgba(74,222,128,0.8)'); pieBorders.push('rgba(74,222,128,1)'); }
+    if (debtMo > 0) { pieLabels.push('DUO-aflossing'); pieData.push(debtMo); pieColors.push('rgba(248,113,113,0.8)'); pieBorders.push('rgba(248,113,113,1)'); }
+    if (remaining > 0) { pieLabels.push('Onverdeeld'); pieData.push(remaining); pieColors.push('rgba(251,191,36,0.5)'); pieBorders.push('rgba(251,191,36,1)'); }
+
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: pieLabels,
+            datasets: [{
+                data: pieData,
+                backgroundColor: pieColors,
+                borderColor: pieBorders,
+                borderWidth: 2,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    titleFont: { family: 'DM Sans' },
+                    bodyFont: { family: 'DM Sans' },
+                    cornerRadius: 8,
+                    padding: 10,
+                    callbacks: {
+                        label: function(ctx) {
+                            const total = ctx.dataset.data.reduce((a,b) => a + b, 0);
+                            const pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                            return ctx.label + ': €' + ctx.parsed.toLocaleString('nl-NL') + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // ─── LEGEND ───
+    const legendEl = document.getElementById('allocationLegend');
+    const total = freeIncome > 0 ? freeIncome : allocated;
+    const items = [
+        { label: '🏦 Betaalrekening', value: revMoBase, color: 'rgba(96,165,250,0.8)' },
+        { label: '📈 Depositorekening', value: extMo, color: 'rgba(74,222,128,0.8)' },
+        { label: '🎓 DUO-aflossing', value: debtMo, color: 'rgba(248,113,113,0.8)' },
+    ];
+    if (remaining > 0) items.push({ label: '💰 Onverdeeld', value: remaining, color: 'rgba(251,191,36,0.5)' });
+
+    legendEl.innerHTML = items.map(it => {
+        const pct = total > 0 ? Math.round(it.value / total * 100) : 0;
+        return `<div class="legend-item">
+            <div class="legend-dot" style="background:${it.color}"></div>
+            <span class="legend-label">${it.label}</span>
+            <span class="legend-value">€${it.value.toLocaleString('nl-NL')}</span>
+            <span class="legend-pct">${pct}%</span>
+            <div class="legend-bar-track"><div class="legend-bar-fill" style="width:${pct}%;background:${it.color}"></div></div>
+        </div>`;
+    }).join('');
+
+    const ctx = document.getElementById('strategyChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels.map(m => m % 12 === 0 ? 'Jaar ' + (m/12) : ''),
+            datasets: [
+                {
+                    label: 'Netto vermogen',
+                    data: wealthHist,
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74,222,128,0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    pointHitRadius: 8
+                },
+                {
+                    label: 'Totaal spaargeld',
+                    data: assetHist,
+                    borderColor: '#60a5fa',
+                    borderDash: [4, 4],
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHitRadius: 8
+                },
+                {
+                    label: 'Resterende schuld',
+                    data: debtHist,
+                    borderColor: '#f87171',
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHitRadius: 8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'rgba(255,255,255,0.7)',
+                        font: { family: 'DM Sans', size: 12 },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleFont: { family: 'DM Sans' },
+                    bodyFont: { family: 'DM Sans' },
+                    cornerRadius: 10,
+                    padding: 12,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.dataset.label + ': €' + ctx.parsed.y.toLocaleString('nl-NL');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.35)',
+                        font: { family: 'DM Sans', size: 11 },
+                        callback: v => '€' + (v/1000).toFixed(0) + 'k'
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.35)',
+                        font: { family: 'DM Sans', size: 11 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: Math.min(years + 1, 16)
+                    }
+                }
+            }
+        }
+    });
+}
+run();
+
+// ─── SIMULATION ENGINE ───
+function simulate(revStart, extStart, debtStart, revMo, extMo, debtMo, rR1, rR2, revTier, eR, dR, months, raiseRate) {
+    let rev = revStart, ext = extStart, debt = debtStart;
+    const rr = (raiseRate || 0) / 100;
+    for (let m = 0; m < months; m++) {
+        const rf = Math.pow(1 + rr, Math.floor(m / 12));
+        const sRevMo = revMo * rf, sExtMo = extMo * rf, sDebtMo = debtMo * rf;
+        let curRevMo = sRevMo;
+        const tp = Math.min(rev, revTier);
+        const op = Math.max(rev - revTier, 0);
+        rev += tp * rR1 + op * rR2;
+        ext += ext * eR;
+        if (debt > 0) {
+            debt = (debt * (1 + dR)) - sDebtMo;
+            if (debt <= 0) debt = 0;
+        } else {
+            curRevMo += sDebtMo;
+        }
+        rev += curRevMo;
+        ext += sExtMo;
+    }
+    return Math.round(rev + ext - debt);
+}
+
+// ─── CONFETTI SYSTEM ───
+function launchConfetti(canvas) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.offsetWidth;
+    const H = canvas.height = canvas.offsetHeight;
+    const colors = ['#4ade80','#22c55e','#86efac','#f87171','#60a5fa','#fbbf24','#f472b6','#fff'];
+    const shapes = ['rect','circle','stick'];
+    let particles = [];
+
+    for (let i = 0; i < 80; i++) {
+        particles.push({
+            x: W / 2 + (Math.random() - 0.5) * 60,
+            y: H * 0.55,
+            vx: (Math.random() - 0.5) * 14,
+            vy: -Math.random() * 16 - 4,
+            w: Math.random() * 8 + 3,
+            h: Math.random() * 6 + 2,
+            rot: Math.random() * 360,
+            rotV: (Math.random() - 0.5) * 15,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            shape: shapes[Math.floor(Math.random() * shapes.length)],
+            gravity: 0.25 + Math.random() * 0.15,
+            opacity: 1,
+            decay: 0.008 + Math.random() * 0.008
+        });
+    }
+
+    let frame;
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        let alive = false;
+        particles.forEach(p => {
+            if (p.opacity <= 0) return;
+            alive = true;
+            p.x += p.vx;
+            p.vy += p.gravity;
+            p.y += p.vy;
+            p.vx *= 0.98;
+            p.rot += p.rotV;
+            p.opacity -= p.decay;
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot * Math.PI / 180);
+            ctx.globalAlpha = Math.max(0, p.opacity);
+            ctx.fillStyle = p.color;
+
+            if (p.shape === 'circle') {
+                ctx.beginPath();
+                ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (p.shape === 'stick') {
+                ctx.fillRect(-1, -p.h, 2, p.h * 2);
+            } else {
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            }
+            ctx.restore();
+        });
+        if (alive) frame = requestAnimationFrame(draw);
+    }
+    draw();
+    setTimeout(() => { cancelAnimationFrame(frame); ctx.clearRect(0, 0, W, H); }, 3000);
+}
+
+// ─── OPTIMIZER ───
+let bestResult = null;
+
+function optimize() {
+    const btn = document.getElementById('optimizeBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const resultEl = document.getElementById('optimizeResult');
+
+    // Reset
+    btn.classList.remove('scored');
+    resultEl.classList.remove('show');
+    btn.classList.add('computing', 'flash');
+    btnText.textContent = 'Berekenen...';
+
+    // Read params
+    const revStart = parseFloat(document.getElementById('revInit').value) || 0;
+    const extStart = parseFloat(document.getElementById('extInit').value) || 0;
+    const debtStart = parseFloat(document.getElementById('debtInit').value) || 0;
+    const rR1 = Math.pow(1 + (parseFloat(document.getElementById('revRate1').value) / 100), 1/12) - 1;
+    const rR2 = Math.pow(1 + (parseFloat(document.getElementById('revRate2').value) / 100), 1/12) - 1;
+    const revTier = parseFloat(document.getElementById('revTier').value) || 0;
+    const eR = Math.pow(1 + (parseFloat(document.getElementById('extRate').value) / 100), 1/12) - 1;
+    const dR = Math.pow(1 + (parseFloat(document.getElementById('debtRate').value) / 100), 1/12) - 1;
+
+    const curRevMo = parseFloat(document.getElementById('revMo').value) || 0;
+    const curExtMo = parseFloat(document.getElementById('extMo').value) || 0;
+    const curDebtMo = parseFloat(document.getElementById('debtMo').value) || 0;
+    const totalBudget = parseFloat(document.getElementById('freeIncome').value) || (curRevMo + curExtMo + curDebtMo);
+    const simMonths = (parseInt(document.getElementById('yearSelect').value) || 5) * 12;
+    const simYears = parseInt(document.getElementById('yearSelect').value) || 5;
+    const optRaise = parseFloat(document.getElementById('raiseRate').value) || 0;
+
+    // Current wealth
+    const currentWealth = simulate(revStart, extStart, debtStart, curRevMo, curExtMo, curDebtMo, rR1, rR2, revTier, eR, dR, simMonths, optRaise);
+
+    // Brute force: try all integer splits in steps of €10
+    const step = totalBudget > 3000 ? 50 : totalBudget > 1500 ? 20 : 10;
+    let bestW = -Infinity, bestRev = 0, bestExt = 0, bestDebt = 0;
+
+    setTimeout(() => {
+        for (let d = 0; d <= totalBudget; d += step) {
+            for (let r = 0; r <= totalBudget - d; r += step) {
+                const e = totalBudget - d - r;
+                const w = simulate(revStart, extStart, debtStart, r, e, d, rR1, rR2, revTier, eR, dR, simMonths, optRaise);
+                if (w > bestW) {
+                    bestW = w;
+                    bestRev = r;
+                    bestExt = e;
+                    bestDebt = d;
+                }
+            }
+        }
+
+        bestResult = { rev: bestRev, ext: bestExt, debt: bestDebt };
+        const diff = bestW - currentWealth;
+
+        // Done!
+        btn.classList.remove('computing');
+        btn.classList.add('scored');
+        btnText.textContent = 'Strategie gevonden!';
+
+        // Confetti!
+        launchConfetti(document.getElementById('confettiCanvas'));
+
+        // Show result
+        resultEl.innerHTML = `
+            <div class="result-title">🏑 Optimale verdeling van €${totalBudget}/maand</div>
+            <div class="result-grid">
+                <div class="result-item">Betaalrekening: <strong>€${bestRev}</strong>/mnd</div>
+                <div class="result-item">Huidige: €${curRevMo}/mnd</div>
+                <div class="result-item">Depositorekening: <strong>€${bestExt}</strong>/mnd</div>
+                <div class="result-item">Huidige: €${curExtMo}/mnd</div>
+                <div class="result-item">DUO-aflossing: <strong>€${bestDebt}</strong>/mnd</div>
+                <div class="result-item">Huidige: €${curDebtMo}/mnd</div>
+            </div>
+            <div class="result-diff">
+                ${diff > 0
+                    ? `Je verdient <span class="amount">€${diff.toLocaleString('nl-NL')}</span> meer na ${simYears} jaar!`
+                    : diff === 0
+                        ? 'Je huidige verdeling is al optimaal — lekker bezig! 💪'
+                        : `Verschil: <span class="amount">€${diff.toLocaleString('nl-NL')}</span>`
+                }
+            </div>
+            ${diff !== 0 ? '<button class="result-apply" onclick="applyBest()">Toepassen op mijn plan</button>' : ''}
+        `;
+        resultEl.classList.add('show');
+
+        setTimeout(() => {
+            btnText.textContent = 'Bereken beste strategie';
+            btn.classList.remove('scored', 'flash');
+        }, 3000);
+
+    }, 400); // small delay for the animation to show
+}
+
+function applyBest() {
+    if (!bestResult) return;
+
+    // Animate the inputs changing
+    const targets = [
+        { el: document.getElementById('revMo'), val: bestResult.rev },
+        { el: document.getElementById('extMo'), val: bestResult.ext },
+        { el: document.getElementById('debtMo'), val: bestResult.debt },
+    ];
+
+    let step = 0;
+    const totalSteps = 25;
+    const starts = targets.map(t => parseFloat(t.el.value) || 0);
+
+    function tick() {
+        step++;
+        const progress = step / totalSteps;
+        // Ease out cubic
+        const ease = 1 - Math.pow(1 - progress, 3);
+        targets.forEach((t, i) => {
+            t.el.value = Math.round(starts[i] + (t.val - starts[i]) * ease);
+            // Flash effect on input
+            t.el.style.borderColor = `rgba(74,222,128,${0.6 * (1 - progress)})`;
+            t.el.style.boxShadow = `0 0 ${20 * (1 - progress)}px rgba(74,222,128,${0.3 * (1 - progress)})`;
+        });
+        run();
+        if (step < totalSteps) {
+            requestAnimationFrame(tick);
+        } else {
+            targets.forEach(t => {
+                t.el.style.borderColor = '';
+                t.el.style.boxShadow = '';
+            });
+        }
+    }
+    tick();
+
+    // Update result card
+    document.querySelector('.result-apply')?.remove();
+    const diff = document.querySelector('.result-diff');
+    if (diff) diff.innerHTML = 'Toegepast! De grafiek is bijgewerkt. ✅';
+}
+</script>
+</body>
+</html>
