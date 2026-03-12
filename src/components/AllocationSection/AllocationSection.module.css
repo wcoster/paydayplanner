@@ -1,0 +1,40 @@
+.section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  border: 1px solid var(--border-base);
+  margin-bottom: var(--space-5);
+}
+.chartWrap { width: 160px; height: 160px; flex-shrink: 0; }
+
+.legend { flex: 1; display: flex; flex-direction: column; gap: var(--space-2); }
+.legendItem { display: flex; align-items: center; gap: 10px; }
+.dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.legendLabel { font-size: 0.82rem; color: var(--text-secondary); flex: 1; }
+.legendValue { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; color: var(--text-primary); }
+.legendPct { font-size: 0.75rem; color: var(--text-muted); width: 42px; text-align: right; }
+.barTrack {
+  width: 60px; height: 5px;
+  background: var(--border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(.17,.67,.28,1);
+}
+
+@media (max-width: 900px) { .barTrack { display: none; } }
+@media (max-width: 600px) {
+  .section    { flex-direction: column; padding: var(--space-4); gap: var(--space-4); }
+  .chartWrap  { width: 140px; height: 140px; margin: 0 auto; }
+  .legendItem { gap: var(--space-1); }
+  .legendLabel { font-size: 0.75rem; }
+  .legendValue { font-size: 0.82rem; }
+  .legendPct   { width: 36px; font-size: 0.7rem; }
+  .barTrack    { display: none; }
+}

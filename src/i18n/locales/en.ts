@@ -1,0 +1,83 @@
+const en = {
+  common: {
+    backToHub: 'Hub',
+    tags: {
+      finance: 'Finance',
+      planning: 'Planning',
+    },
+  },
+  home: {
+    title: 'The Everything Hub',
+    subtitle: 'Your personal collection of tools & planners',
+    sectionModules: 'Modules',
+    comingSoon: 'More modules coming soon',
+  },
+  wealthPlanner: {
+    title: 'Wealth Planner',
+    cardDesc: 'Pay off debt & build wealth',
+    subtitle: '{{years}}-year projection — paying off debt & building wealth',
+    income: {
+      label: 'Free monthly budget',
+      raiseLabel: '📈 Annual salary raise',
+      over: '€{{amount}} left over',
+      short: '€{{amount}} short',
+      perfect: 'Perfectly allocated',
+    },
+    stats: {
+      wealth: 'Net wealth ({{years}} yr)',
+      debtFree: 'Debt-free after',
+      savings: 'Total savings',
+      endIncome: 'Income end of period',
+    },
+    debtStatus: {
+      none: 'No debt',
+      tooLow: 'Repayment too low',
+      yearsMonths: '{{years}} yr, {{months}} mo',
+      years: '{{years}} years',
+      months: '{{months}} months',
+    },
+    sections: {
+      bank: '🏦 Current account',
+      deposit: '📈 Savings account',
+      duo: '🎓 Student loan',
+      startAmount: 'Opening balance (€)',
+      monthlyDeposit: 'Monthly deposit (€)',
+      interestUpToThreshold: 'Interest up to threshold (%)',
+      threshold: 'Threshold (€)',
+      interestAboveThreshold: 'Interest above threshold (%)',
+      annualInterest: 'Annual interest (%)',
+      debtAmount: 'Outstanding amount (€)',
+      monthlyRepayment: 'Monthly repayment (€)',
+      duoNote: 'After payoff, the monthly amount automatically moves to your current account.',
+    },
+    allocation: {
+      bank: '🏦 Current account',
+      deposit: '📈 Savings account',
+      duo: '🎓 Loan repayment',
+      unallocated: '💰 Unallocated',
+    },
+    optimize: {
+      button: 'Find best strategy',
+      computing: 'Calculating...',
+      found: 'Strategy found!',
+      resultTitle: '🏑 Optimal split of €{{budget}}/month',
+      bank: 'Current account',
+      deposit: 'Savings account',
+      duo: 'Student loan',
+      current: 'Current',
+      perMonth: '/mo',
+      gainText: 'You gain €{{amount}} more after {{years}} years!',
+      optimal: 'Your current split is already optimal — nice work! 💪',
+      apply: 'Apply to my plan',
+    },
+    chart: {
+      netWealth: 'Net wealth',
+      savings: 'Total savings',
+      debt: 'Remaining debt',
+    },
+    yearOption: '{{n}} yr',
+    footer: 'Indicative model — not financial advice',
+  },
+} as const;
+
+export default en;

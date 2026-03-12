@@ -1,0 +1,83 @@
+const nl = {
+  common: {
+    backToHub: 'Hub',
+    tags: {
+      finance: 'Finance',
+      planning: 'Planning',
+    },
+  },
+  home: {
+    title: 'The Everything Hub',
+    subtitle: 'Jouw persoonlijke verzameling tools & planners',
+    sectionModules: 'Modules',
+    comingSoon: 'Meer modules komen binnenkort',
+  },
+  wealthPlanner: {
+    title: 'Vermogenplanner',
+    cardDesc: 'Schuld afbetalen & vermogen opbouwen',
+    subtitle: '{{years}}-jaar projectie — schuld afbetalen & vermogen opbouwen',
+    income: {
+      label: 'Vrij besteedbaar per maand',
+      raiseLabel: '📈 Jaarlijkse loonsverhoging',
+      over: '€{{amount}} over',
+      short: '€{{amount}} tekort',
+      perfect: 'Precies verdeeld',
+    },
+    stats: {
+      wealth: 'Netto vermogen ({{years}} jaar)',
+      debtFree: 'Schuld afgelost na',
+      savings: 'Totaal spaargeld',
+      endIncome: 'Inkomen einde periode',
+    },
+    debtStatus: {
+      none: 'Geen schuld',
+      tooLow: 'Aflossing te laag',
+      yearsMonths: '{{years}} jr, {{months}} mnd',
+      years: '{{years}} jaar',
+      months: '{{months}} maanden',
+    },
+    sections: {
+      bank: '🏦 Betaalrekening',
+      deposit: '📈 Depositorekening',
+      duo: '🎓 DUO-schuld',
+      startAmount: 'Startbedrag (€)',
+      monthlyDeposit: 'Maandelijkse storting (€)',
+      interestUpToThreshold: 'Rente t/m drempel (%)',
+      threshold: 'Drempel (€)',
+      interestAboveThreshold: 'Rente boven drempel (%)',
+      annualInterest: 'Rente per jaar (%)',
+      debtAmount: 'Openstaand bedrag (€)',
+      monthlyRepayment: 'Maandelijkse aflossing (€)',
+      duoNote: 'Na aflossing gaat het maandbedrag automatisch naar je betaalrekening.',
+    },
+    allocation: {
+      bank: '🏦 Betaalrekening',
+      deposit: '📈 Depositorekening',
+      duo: '🎓 DUO-aflossing',
+      unallocated: '💰 Onverdeeld',
+    },
+    optimize: {
+      button: 'Bereken beste strategie',
+      computing: 'Berekenen...',
+      found: 'Strategie gevonden!',
+      resultTitle: '🏑 Optimale verdeling van €{{budget}}/maand',
+      bank: 'Betaalrekening',
+      deposit: 'Depositorekening',
+      duo: 'DUO-aflossing',
+      current: 'Huidige',
+      perMonth: '/mnd',
+      gainText: 'Je verdient €{{amount}} meer na {{years}} jaar!',
+      optimal: 'Je huidige verdeling is al optimaal — lekker bezig! 💪',
+      apply: 'Toepassen op mijn plan',
+    },
+    chart: {
+      netWealth: 'Netto vermogen',
+      savings: 'Totaal spaargeld',
+      debt: 'Resterende schuld',
+    },
+    yearOption: '{{n}} jaar',
+    footer: 'Indicatief model — geen financieel advies',
+  },
+} as const;
+
+export default nl;

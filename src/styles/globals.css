@@ -1,0 +1,246 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=DM+Sans:wght@400;500;700&display=swap');
+
+/* ================================================================
+   DESIGN TOKENS
+   ================================================================ */
+:root {
+  /* Fonts */
+  --font-display: 'Outfit', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* Spacing — 4 px base grid */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-9:  36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-14: 56px;
+
+  /* Border radius */
+  --radius-xs:   6px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s;
+  --transition-base: 0.2s;
+  --transition-slow: 0.3s;
+}
+
+/* ================================================================
+   THEME: aurora  (default)
+   ================================================================ */
+:root,
+[data-theme='aurora'],
+[data-theme='forest'] {        /* 'forest' kept as legacy alias */
+  --accent:        #4ade80;
+  --accent-mid:    #22c55e;
+  --accent-light:  #86efac;
+  --accent-dark:   #16a34a;
+  --accent-darker: #15803d;
+
+  --color-danger:       #f87171;
+  --color-danger-light: #fca5a5;
+  --color-warning:      #fbbf24;
+  --color-info:         #60a5fa;
+
+  --bg-base:    #06091a;
+  --bg-pitch-a: #08091e;
+  --bg-pitch-b: #060a1a;
+  --bg-pitch-c: #050818;
+
+  --surface-glass:     rgba(255,255,255,0.06);
+  --surface-card:      rgba(255,255,255,0.04);
+  --surface-input:     rgba(0,0,0,0.30);
+  --surface-input-alt: rgba(0,0,0,0.35);
+  --surface-hover:     rgba(255,255,255,0.07);
+  --surface-overlay:   rgba(0,0,0,0.80);
+
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-base:   rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.10);
+  --border-glass:  rgba(255,255,255,0.10);
+
+  --text-primary:   #ffffff;
+  --text-secondary: rgba(255,255,255,0.50);
+  --text-muted:     rgba(255,255,255,0.35);
+  --text-faint:     rgba(255,255,255,0.25);
+
+  --glass-blur: 20px;
+
+  --glow-a: #4ade80;
+  --glow-b: #818cf8;
+  --glow-c: #22d3ee;
+
+  --tooltip-bg: rgba(0,0,0,0.85);
+  --option-bg:  #1e293b;
+}
+
+/* ================================================================
+   THEME: hockey  (field-hockey pitch, dark green)
+   ================================================================ */
+[data-theme='hockey'] {
+  --accent:        #4ade80;
+  --accent-mid:    #22c55e;
+  --accent-light:  #86efac;
+  --accent-dark:   #16a34a;
+  --accent-darker: #15803d;
+
+  --color-danger:       #f87171;
+  --color-danger-light: #fca5a5;
+  --color-warning:      #fbbf24;
+  --color-info:         #60a5fa;
+
+  --bg-base:    #0c1a0c;
+  --bg-pitch-a: #0d2818;
+  --bg-pitch-b: #102e1a;
+  --bg-pitch-c: #0a1f10;
+
+  --surface-glass:     rgba(255,255,255,0.06);
+  --surface-card:      rgba(255,255,255,0.04);
+  --surface-input:     rgba(0,0,0,0.30);
+  --surface-input-alt: rgba(0,0,0,0.35);
+  --surface-hover:     rgba(255,255,255,0.07);
+  --surface-overlay:   rgba(0,0,0,0.80);
+
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-base:   rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.10);
+  --border-glass:  rgba(255,255,255,0.10);
+
+  --text-primary:   #ffffff;
+  --text-secondary: rgba(255,255,255,0.50);
+  --text-muted:     rgba(255,255,255,0.35);
+  --text-faint:     rgba(255,255,255,0.25);
+
+  --glass-blur: 20px;
+
+  --glow-a: #22c55e;
+  --glow-b: #16a34a;
+  --glow-c: #4ade80;
+
+  --tooltip-bg: rgba(0,0,0,0.85);
+  --option-bg:  #1a2e1a;
+}
+
+/* ================================================================
+   THEME: safari  (African savanna, warm amber)
+   ================================================================ */
+[data-theme='safari'] {
+  --accent:        #f59e0b;
+  --accent-mid:    #d97706;
+  --accent-light:  #fcd34d;
+  --accent-dark:   #b45309;
+  --accent-darker: #92400e;
+
+  --color-danger:       #f87171;
+  --color-danger-light: #fca5a5;
+  --color-warning:      #4ade80;
+  --color-info:         #60a5fa;
+
+  --bg-base:    #0c0703;
+  --bg-pitch-a: #150a04;
+  --bg-pitch-b: #1a0e06;
+  --bg-pitch-c: #0d0604;
+
+  --surface-glass:     rgba(255,200,100,0.05);
+  --surface-card:      rgba(255,200,100,0.03);
+  --surface-input:     rgba(0,0,0,0.35);
+  --surface-input-alt: rgba(0,0,0,0.40);
+  --surface-hover:     rgba(255,200,100,0.07);
+  --surface-overlay:   rgba(10,5,2,0.85);
+
+  --border-subtle: rgba(255,200,100,0.06);
+  --border-base:   rgba(255,200,100,0.09);
+  --border-strong: rgba(255,200,100,0.13);
+  --border-glass:  rgba(255,200,100,0.10);
+
+  --text-primary:   #fff8f0;
+  --text-secondary: rgba(255,240,210,0.55);
+  --text-muted:     rgba(255,230,190,0.35);
+  --text-faint:     rgba(255,220,170,0.25);
+
+  --glass-blur: 20px;
+
+  --glow-a: #f59e0b;
+  --glow-b: #ef4444;
+  --glow-c: #fbbf24;
+
+  --tooltip-bg: rgba(20,10,4,0.90);
+  --option-bg:  #2d1a06;
+}
+
+/* ================================================================
+   RESET
+   ================================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Prevent iOS zoom on number inputs */
+input[type='number'], select { font-size: 16px; }
+@media (min-width: 601px) {
+  input[type='number'] { font-size: 0.95rem; }
+  select               { font-size: 1rem; }
+}
+
+/* ================================================================
+   BASE
+   ================================================================ */
+body {
+  font-family: var(--font-body);
+  min-height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+/* ── Glow blobs — aurora ambient light for glass cards ── */
+.glow {
+  position: fixed;
+  border-radius: var(--radius-full);
+  filter: blur(130px);
+  z-index: 0;
+  pointer-events: none;
+  animation: glowDrift 22s ease-in-out infinite;
+}
+.glow-1 { width: 700px; height: 320px; background: var(--glow-a); top:    -5%; left:  -8%; opacity: 0.13; animation-delay:  0s; }
+.glow-2 { width: 600px; height: 260px; background: var(--glow-b); bottom: -5%; right: -6%; opacity: 0.10; animation-delay: -8s; }
+.glow-3 { width: 400px; height: 200px; background: var(--glow-c); top:   40%; left:  38%; opacity: 0.07; animation-delay: -15s; }
+
+@keyframes glowDrift {
+  0%, 100% { transform: translate(0,   0)   scale(1); }
+  33%       { transform: translate(40px, -25px) scale(1.08); }
+  66%       { transform: translate(-25px, 35px) scale(0.94); }
+}
+
+/* ── Utility: glass card ── */
+.glass {
+  background: var(--surface-glass);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Mobile: disable heavy effects ── */
+@media (max-width: 600px) {
+  .glow { display: none; }
+}

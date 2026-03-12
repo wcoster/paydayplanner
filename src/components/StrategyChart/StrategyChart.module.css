@@ -1,0 +1,14 @@
+.wrap {
+  height: 380px;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-base) 25%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 600px) {
+  .wrap { height: 260px; padding: var(--space-3); border-radius: var(--radius-md); }
+}
+@media (max-width: 380px) {
+  .wrap { height: 220px; }
+}

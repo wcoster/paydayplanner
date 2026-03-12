@@ -1,0 +1,131 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 22px;
+  border-radius: 14px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-warning) 10%, transparent),
+    color-mix(in srgb, var(--color-warning) 4%, transparent));
+  border: 1px solid color-mix(in srgb, var(--color-warning) 20%, transparent);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.incomeLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-warning);
+  white-space: nowrap;
+}
+.incomeIcon { font-size: 1.3rem; }
+
+.incomeInputWrap {
+  display: flex;
+  align-items: center;
+  background: var(--surface-input-alt);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 25%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.incomeInputWrap:focus-within {
+  border-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning) 10%, transparent);
+}
+.euro {
+  color: var(--color-warning);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.incomeInputWrap input {
+  width: 100px;
+  padding: var(--space-2);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.incomeInputWrap input::-webkit-outer-spin-button,
+.incomeInputWrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.raiseWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--border-base);
+}
+.raiseLabel { font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; }
+
+.raiseInputWrap {
+  display: flex;
+  align-items: center;
+  background: var(--surface-input-alt);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 0 10px;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.raiseInputWrap:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.raiseInputWrap input {
+  width: 52px;
+  padding: var(--space-2) var(--space-1);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  outline: none;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+.raiseInputWrap input::-webkit-outer-spin-button,
+.raiseInputWrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.raisePct {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.remaining {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: var(--space-1) 14px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.positive { color: var(--accent);        background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.negative { color: var(--color-danger);  background: color-mix(in srgb, var(--color-danger) 10%, transparent); }
+.zero     { color: var(--color-warning); background: color-mix(in srgb, var(--color-warning) 10%, transparent); }
+
+@media (max-width: 768px) {
+  .raiseWrap {
+    margin-left: 0; padding-left: 0; border-left: none;
+    padding-top: 10px; border-top: 1px solid var(--border-base); width: 100%;
+  }
+  .remaining { margin-left: 0; width: 100%; text-align: center; }
+}
+@media (max-width: 600px) {
+  .bar { padding: 14px var(--space-4); border-radius: var(--radius-md); flex-direction: column; align-items: stretch; gap: 10px; }
+  .incomeLabel { font-size: 0.82rem; }
+  .incomeInputWrap { width: 100%; }
+  .incomeInputWrap input { width: 100%; }
+  .raiseWrap { flex-wrap: wrap; }
+}
