@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TimelineEvent, TimelineEventType } from '../../types';
 import styles from './TimelineEditor.module.css';
@@ -24,6 +24,8 @@ function newId() {
 
 export default function TimelineEditor({ events, maxYear, onChange }: Props) {
   const { t } = useTranslation();
+  const uid = useId();
+  const fid = (name: string) => `${uid}-${name}`;
   const [adding, setAdding] = useState(false);
   const [form, setForm]     = useState(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
@@ -98,8 +100,8 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
       {adding && (
         <div className={styles.form}>
           <div className={styles.formRow}>
-            <label className={styles.formLabel}>{t('wealthPlanner.timeline.form.year')}</label>
-            <select value={form.year} onChange={e => updateForm('year', parseInt(e.target.value))} className={styles.formSelect}>
+            <label className={styles.formLabel} htmlFor={fid('year')}>{t('wealthPlanner.timeline.form.year')}</label>
+            <select id={fid('year')} value={form.year} onChange={e => updateForm('year', parseInt(e.target.value))} className={styles.formSelect}>
               {Array.from({ length: maxYear }, (_, i) => i + 1).map(y => (
                 <option key={y} value={y}>{t('wealthPlanner.yearOption', { n: y })}</option>
               ))}
@@ -107,8 +109,8 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
           </div>
 
           <div className={styles.formRow}>
-            <label className={styles.formLabel}>{t('wealthPlanner.timeline.form.type')}</label>
-            <select value={form.type} onChange={e => updateForm('type', e.target.value as TimelineEventType)} className={styles.formSelect}>
+            <label className={styles.formLabel} htmlFor={fid('type')}>{t('wealthPlanner.timeline.form.type')}</label>
+            <select id={fid('type')} value={form.type} onChange={e => updateForm('type', e.target.value as TimelineEventType)} className={styles.formSelect}>
               <option value="deposito">{t('wealthPlanner.timeline.types.deposito')}</option>
               <option value="stock_lump">{t('wealthPlanner.timeline.types.stock_lump')}</option>
               <option value="extra_repayment">{t('wealthPlanner.timeline.types.extra_repayment')}</option>
@@ -116,26 +118,26 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
           </div>
 
           <div className={styles.formRow}>
-            <label className={styles.formLabel}>{t('wealthPlanner.timeline.form.amount')}</label>
+            <label className={styles.formLabel} htmlFor={fid('amount')}>{t('wealthPlanner.timeline.form.amount')}</label>
             <div className={styles.inputWrap}>
               <span className={styles.euro}>€</span>
-              <input type="number" value={form.amount} step={500} min={0} onChange={e => updateForm('amount', parseFloat(e.target.value) || 0)} className={styles.formInput} />
+              <input id={fid('amount')} type="number" value={form.amount} step={500} min={0} onChange={e => updateForm('amount', parseFloat(e.target.value) || 0)} className={styles.formInput} />
             </div>
           </div>
 
           {form.type === 'deposito' && (
             <>
               <div className={styles.formRow}>
-                <label className={styles.formLabel}>{t('wealthPlanner.timeline.form.duration')}</label>
+                <label className={styles.formLabel} htmlFor={fid('duration')}>{t('wealthPlanner.timeline.form.duration')}</label>
                 <div className={styles.inputWrap}>
-                  <input type="number" value={form.depositoDuration} step={1} min={1} max={30} onChange={e => updateForm('depositoDuration', parseInt(e.target.value) || 1)} className={styles.formInput} />
+                  <input id={fid('duration')} type="number" value={form.depositoDuration} step={1} min={1} max={30} onChange={e => updateForm('depositoDuration', parseInt(e.target.value) || 1)} className={styles.formInput} />
                   <span className={styles.unit}>{t('wealthPlanner.timeline.form.years')}</span>
                 </div>
               </div>
               <div className={styles.formRow}>
-                <label className={styles.formLabel}>{t('wealthPlanner.timeline.form.rate')}</label>
+                <label className={styles.formLabel} htmlFor={fid('rate')}>{t('wealthPlanner.timeline.form.rate')}</label>
                 <div className={styles.inputWrap}>
-                  <input type="number" value={form.depositoRate} step={0.1} min={0} onChange={e => updateForm('depositoRate', parseFloat(e.target.value) || 0)} className={styles.formInput} />
+                  <input id={fid('rate')} type="number" value={form.depositoRate} step={0.1} min={0} onChange={e => updateForm('depositoRate', parseFloat(e.target.value) || 0)} className={styles.formInput} />
                   <span className={styles.unit}>%</span>
                 </div>
               </div>
@@ -143,8 +145,8 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
           )}
 
           <div className={styles.formRow}>
-            <label className={styles.formLabel}>{t('wealthPlanner.timeline.form.label')}</label>
-            <input type="text" value={form.label} placeholder={t('wealthPlanner.timeline.form.labelPlaceholder')} onChange={e => updateForm('label', e.target.value)} className={styles.formInput} />
+            <label className={styles.formLabel} htmlFor={fid('label')}>{t('wealthPlanner.timeline.form.label')}</label>
+            <input id={fid('label')} type="text" value={form.label} placeholder={t('wealthPlanner.timeline.form.labelPlaceholder')} onChange={e => updateForm('label', e.target.value)} className={styles.formInput} />
           </div>
 
           <div className={styles.formActions}>

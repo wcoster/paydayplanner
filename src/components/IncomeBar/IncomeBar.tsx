@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './IncomeBar.module.css';
 
@@ -17,6 +18,8 @@ export default function IncomeBar({
   onFreeIncomeChange, onRaiseRateChange,
 }: Props) {
   const { t } = useTranslation();
+  const freeIncomeId = useId();
+  const raiseRateId  = useId();
 
   const allocated = revMo + extMo + debtMo + stockMo;
   const remaining = freeIncome - allocated;
@@ -38,16 +41,19 @@ export default function IncomeBar({
       <div className={styles.incomeInputWrap}>
         <span className={styles.euro}>€</span>
         <input
+          id={freeIncomeId}
           type="number"
           value={freeIncome}
+          aria-label={t('wealthPlanner.income.label')}
           onChange={e => onFreeIncomeChange(parseFloat(e.target.value) || 0)}
         />
       </div>
 
       <div className={styles.raiseWrap}>
-        <span className={styles.raiseLabel}>{t('wealthPlanner.income.raiseLabel')}</span>
+        <label className={styles.raiseLabel} htmlFor={raiseRateId}>{t('wealthPlanner.income.raiseLabel')}</label>
         <div className={styles.raiseInputWrap}>
           <input
+            id={raiseRateId}
             type="number"
             value={raiseRate}
             step={0.5}

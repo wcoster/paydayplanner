@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import styles from './InputGroup.module.css';
 
 interface Props {
@@ -9,10 +10,12 @@ interface Props {
 }
 
 export default function InputGroup({ label, value, onChange, step = 1, variant = 'default' }: Props) {
+  const id = useId();
   return (
     <div className={styles.group}>
-      <label className={styles.label}>{label}</label>
+      <label className={styles.label} htmlFor={id}>{label}</label>
       <input
+        id={id}
         type="number"
         className={`${styles.input} ${variant === 'debt' ? styles.debt : ''}`}
         value={value}
