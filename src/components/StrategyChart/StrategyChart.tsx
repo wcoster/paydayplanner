@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line } from 'react-chartjs-2';
 import type { ChartData, ChartOptions } from 'chart.js';
@@ -12,6 +13,14 @@ interface Props {
 
 export default function StrategyChart({ simResult, years, bufferAmount }: Props) {
   const { t } = useTranslation();
+
+  // Defer Chart.js initialisation to the next animation frame so it doesn't
+  // trigger a forced synchronous reflow during React's first-paint commit.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   const { wealthHist, assetHist, debtHist, stockHist, depositoHist } = simResult;
 
   const labels = wealthHist.map((_, i) =>
@@ -137,7 +146,7 @@ export default function StrategyChart({ simResult, years, bufferAmount }: Props)
 
   return (
     <div className={styles.wrap}>
-      <Line data={data} options={options} />
+      {ready && <Line data={data} options={options} />}
     </div>
   );
 }
