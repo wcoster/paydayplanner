@@ -13,39 +13,90 @@ export default function InputGrid({ inputs, onChange }: Props) {
 
   return (
     <div className={styles.grid}>
+      {/* Current account */}
       <div className={styles.section}>
-        <h3>{t('wealthPlanner.sections.bank')}</h3>
-        <InputGroup label={t('wealthPlanner.sections.startAmount')}          value={inputs.revInit}  onChange={v => onChange('revInit',  v)} />
-        <InputGroup label={t('wealthPlanner.sections.monthlyDeposit')}       value={inputs.revMo}    onChange={v => onChange('revMo',    v)} />
+        <h3 className={styles.heading}>{t('wealthPlanner.accounts.bank')}</h3>
+        <InputGroup
+          label={t('wealthPlanner.accounts.startAmount')}
+          value={inputs.revInit}
+          step={500}
+          onChange={v => onChange('revInit', v)}
+        />
         <div className={styles.tierRow}>
-          <InputGroup label={t('wealthPlanner.sections.interestUpToThreshold')} value={inputs.revRate1} step={0.1} onChange={v => onChange('revRate1', v)} />
-          <InputGroup label={t('wealthPlanner.sections.threshold')}              value={inputs.revTier}  step={100} onChange={v => onChange('revTier',  v)} />
+          <InputGroup
+            label={t('wealthPlanner.accounts.interestUpToThreshold')}
+            value={inputs.revRate1}
+            step={0.05}
+            onChange={v => onChange('revRate1', v)}
+          />
+          <InputGroup
+            label={t('wealthPlanner.accounts.threshold')}
+            value={inputs.revTier}
+            step={1000}
+            onChange={v => onChange('revTier', v)}
+          />
         </div>
-        <InputGroup label={t('wealthPlanner.sections.interestAboveThreshold')} value={inputs.revRate2} step={0.1} onChange={v => onChange('revRate2', v)} />
-        <InputGroup label={t('wealthPlanner.sections.buffer')} value={inputs.bufferAmount} step={100} onChange={v => onChange('bufferAmount', v)} />
+        <InputGroup
+          label={t('wealthPlanner.accounts.interestAboveThreshold')}
+          value={inputs.revRate2}
+          step={0.05}
+          onChange={v => onChange('revRate2', v)}
+        />
       </div>
 
+      {/* Savings account */}
       <div className={styles.section}>
-        <h3>{t('wealthPlanner.sections.deposit')}</h3>
-        <InputGroup label={t('wealthPlanner.sections.startAmount')}    value={inputs.extInit} onChange={v => onChange('extInit', v)} />
-        <InputGroup label={t('wealthPlanner.sections.monthlyDeposit')} value={inputs.extMo}   onChange={v => onChange('extMo',   v)} />
-        <InputGroup label={t('wealthPlanner.sections.annualInterest')} value={inputs.extRate} step={0.1} onChange={v => onChange('extRate', v)} />
+        <h3 className={styles.heading}>{t('wealthPlanner.accounts.deposit')}</h3>
+        <InputGroup
+          label={t('wealthPlanner.accounts.startAmount')}
+          value={inputs.extInit}
+          step={500}
+          onChange={v => onChange('extInit', v)}
+        />
+        <InputGroup
+          label={t('wealthPlanner.accounts.annualInterest')}
+          value={inputs.extRate}
+          step={0.1}
+          onChange={v => onChange('extRate', v)}
+        />
       </div>
 
-      <div className={styles.section + ' ' + styles.stocks}>
-        <h3>{t('wealthPlanner.sections.stocks')}</h3>
-        <InputGroup label={t('wealthPlanner.sections.startAmount')}      value={inputs.stockInit} onChange={v => onChange('stockInit', v)} />
-        <InputGroup label={t('wealthPlanner.sections.monthlyDeposit')}   value={inputs.stockMo}   onChange={v => onChange('stockMo',   v)} />
-        <InputGroup label={t('wealthPlanner.sections.expectedReturn')}   value={inputs.stockRate} step={0.5} onChange={v => onChange('stockRate', v)} />
-        <p className={styles.note}>{t('wealthPlanner.sections.stocksNote')}</p>
+      {/* Stocks */}
+      <div className={`${styles.section} ${styles.stocks}`}>
+        <h3 className={styles.heading}>{t('wealthPlanner.accounts.stocks')}</h3>
+        <InputGroup
+          label={t('wealthPlanner.accounts.startAmount')}
+          value={inputs.stockInit}
+          step={500}
+          onChange={v => onChange('stockInit', v)}
+        />
+        <InputGroup
+          label={t('wealthPlanner.accounts.expectedReturn')}
+          value={inputs.stockRate}
+          step={0.5}
+          onChange={v => onChange('stockRate', v)}
+        />
+        <p className={styles.note}>{t('wealthPlanner.accounts.stocksNote')}</p>
       </div>
 
+      {/* Student loan */}
       <div className={`${styles.section} ${styles.debt}`}>
-        <h3>{t('wealthPlanner.sections.duo')}</h3>
-        <InputGroup label={t('wealthPlanner.sections.debtAmount')}      value={inputs.debtInit} onChange={v => onChange('debtInit', v)} variant="debt" />
-        <InputGroup label={t('wealthPlanner.sections.monthlyRepayment')} value={inputs.debtMo}  onChange={v => onChange('debtMo',   v)} variant="debt" />
-        <InputGroup label={t('wealthPlanner.sections.annualInterest')}  value={inputs.debtRate} step={0.01} onChange={v => onChange('debtRate', v)} variant="debt" />
-        <p className={styles.note}>{t('wealthPlanner.sections.duoNote')}</p>
+        <h3 className={styles.heading}>{t('wealthPlanner.accounts.duo')}</h3>
+        <InputGroup
+          label={t('wealthPlanner.accounts.debtAmount')}
+          value={inputs.debtInit}
+          step={500}
+          variant="debt"
+          onChange={v => onChange('debtInit', v)}
+        />
+        <InputGroup
+          label={t('wealthPlanner.accounts.annualInterest')}
+          value={inputs.debtRate}
+          step={0.01}
+          variant="debt"
+          onChange={v => onChange('debtRate', v)}
+        />
+        <p className={styles.note}>{t('wealthPlanner.accounts.duoNote')}</p>
       </div>
     </div>
   );

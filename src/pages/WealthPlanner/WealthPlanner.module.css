@@ -1,31 +1,39 @@
+/* ── Page header ── */
 .header {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--space-8);
 }
-.headerIcon { font-size: 2.4rem; line-height: 1; }
-
+.headerIcon { font-size: 2.2rem; line-height: 1; }
 .headerText { flex: 1; }
 .headerText h1 {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.8rem;
+  font-size: 1.75rem;
   background: linear-gradient(135deg, var(--accent), var(--accent-mid), var(--accent-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  line-height: 1.1;
 }
 .headerText p {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-secondary);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-.yearWrap { flex-shrink: 0; }
+/* Years selector */
+.yearWrap { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.yearLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
 .yearWrap select {
   appearance: none;
   -webkit-appearance: none;
-  padding: 10px 38px 10px var(--space-4);
+  padding: 10px 36px 10px var(--space-4);
   background: var(--surface-input);
   border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
   border-radius: var(--radius-md);
@@ -38,7 +46,7 @@
   transition: border-color var(--transition-base), box-shadow var(--transition-base);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%234ade80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 14px center;
+  background-position: right 12px center;
 }
 .yearWrap select:hover { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .yearWrap select:focus {
@@ -47,24 +55,80 @@
 }
 .yearWrap select option { background: var(--option-bg); color: var(--text-primary); }
 
+/* ── Section cards ── */
+.section {
+  margin-bottom: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  border: 1px solid var(--border-base);
+  overflow: hidden;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.sectionHeadIcon { font-size: 1.1rem; line-height: 1; }
+.sectionHeadText { flex: 1; }
+.sectionHeadText h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.sectionHeadText p {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 2px 0 0;
+}
+.sectionBody { padding: var(--space-5) var(--space-6); }
+
+/* Accent strip per section theme */
+.income   { border-left: 3px solid var(--color-warning); }
+.income   .sectionHead { background: color-mix(in srgb, var(--color-warning) 5%, transparent); }
+
+.alloc    { border-left: 3px solid var(--color-info); }
+.alloc    .sectionHead { background: color-mix(in srgb, var(--color-info) 4%, transparent); }
+
+.accounts { border-left: 3px solid var(--accent); }
+.accounts .sectionHead { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+
+.timeline { border-left: 3px solid #fb923c; }
+.timeline .sectionHead { background: color-mix(in srgb, #fb923c 4%, transparent); }
+
+.results  { border-left: 3px solid var(--accent-light); }
+.results  .sectionHead { background: color-mix(in srgb, var(--accent-light) 4%, transparent); }
+
+/* Optimize section lives between alloc and accounts — no card wrapper needed */
+.optimizeWrap { margin-bottom: var(--space-5); }
+
+/* ── Footer ── */
 .footer {
   text-align: center;
-  margin-top: var(--space-5);
-  font-size: 0.72rem;
+  margin-top: var(--space-4);
+  font-size: 0.7rem;
   color: var(--text-faint);
 }
 
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .header   { flex-wrap: wrap; gap: var(--space-3); }
-  .yearWrap { order: 3; width: 100%; }
+  .yearWrap { order: 3; width: 100%; align-items: stretch; }
   .yearWrap select { width: 100%; }
 }
 @media (max-width: 600px) {
-  .headerIcon    { font-size: 1.8rem; }
+  .headerIcon    { font-size: 1.7rem; }
   .headerText h1 { font-size: 1.3rem; }
   .headerText p  { font-size: 0.78rem; }
-  .footer        { font-size: 0.65rem; margin-top: 14px; }
+  .sectionHead   { padding: var(--space-3) var(--space-4); }
+  .sectionBody   { padding: var(--space-4); }
+  .sectionHeadText h2 { font-size: 0.92rem; }
 }
 @media (max-width: 380px) {
   .headerText h1 { font-size: 1.15rem; }
+  .sectionBody   { padding: var(--space-3); }
 }

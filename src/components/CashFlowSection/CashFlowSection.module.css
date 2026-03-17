@@ -1,0 +1,299 @@
+/* ── Section shell ── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── Shared: inputs with prefix/suffix ── */
+.inputPre {
+  display: flex;
+  align-items: center;
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.inputPre:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.inputSuf {
+  display: flex;
+  align-items: center;
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.inputSuf:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.pre  { padding: 0 var(--space-2) 0 var(--space-3); color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; }
+.suf  { padding: 0 var(--space-3) 0 var(--space-2); color: var(--accent); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+.numInput {
+  padding: 10px var(--space-3) 10px var(--space-1);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  outline: none;
+  min-width: 0;
+  -moz-appearance: textfield;
+}
+.numInput::-webkit-outer-spin-button,
+.numInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.slim { width: 64px; text-align: right; }
+
+/* ── Income row ── */
+.incomeRow {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.incomeField { flex: 1; min-width: 180px; }
+.raiseField  { min-width: 140px; }
+.fieldLabel  {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+  letter-spacing: 0.02em;
+}
+.incomeField .numInput { width: 130px; font-size: 1.3rem; }
+
+/* ── Expenses block ── */
+.expBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.expHeading {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+}
+
+/* ── Expense list ── */
+.expList { display: flex; flex-direction: column; gap: 6px; }
+
+.expRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.expRow:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-base);
+}
+
+/* Category icon select — looks like just an emoji */
+.catIcon {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  color: transparent;
+  text-shadow: 0 0 0 var(--text-primary); /* emoji trick: color transparent, text-shadow shows emoji */
+  outline: none;
+  flex-shrink: 0;
+}
+.catIcon option { color: initial; text-shadow: none; }
+.catIcon:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  border-radius: 4px;
+}
+
+.expLabel {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  outline: none;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background var(--transition-fast);
+}
+.expLabel:focus { background: var(--surface-input); }
+
+.expAmt { width: 80px; font-size: 0.95rem; padding: 6px var(--space-2) 6px 2px; }
+
+.deleteBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  flex-shrink: 0;
+}
+.deleteBtn:hover { color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 10%, transparent); }
+
+/* ── Add expense form ── */
+.addForm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.addCatSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+  min-width: 150px;
+}
+.addCatSelect option { background: var(--option-bg); }
+.addCatSelect:focus {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.addLabelInput {
+  flex: 1;
+  min-width: 120px;
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  padding: 7px 10px;
+  outline: none;
+  font-family: var(--font-body);
+  transition: border-color var(--transition-base);
+}
+.addLabelInput:focus { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.addLabelInput::placeholder { color: var(--text-faint); }
+.addAmountInput { width: 80px; font-size: 0.9rem; padding: 7px var(--space-2) 7px 2px; }
+
+.saveBtn, .cancelBtn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 1rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
+  flex-shrink: 0;
+}
+.saveBtn   { color: var(--accent);       }
+.saveBtn:hover   { background: color-mix(in srgb, var(--accent)       10%, transparent); border-color: var(--accent); }
+.cancelBtn { color: var(--text-muted);   }
+.cancelBtn:hover { background: color-mix(in srgb, var(--color-danger)  10%, transparent); color: var(--color-danger); border-color: var(--color-danger); }
+
+.addExpBtn {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  letter-spacing: 0.02em;
+}
+.addExpBtn:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+
+/* ── Cash flow summary ── */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 18px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+.summaryLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.summaryKey {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.summaryVal {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.expenseVal { color: var(--color-danger); }
+.freeVal    { font-size: 1.4rem; }
+.freeOk     { color: var(--accent); }
+.freeWarn   { color: var(--color-warning); }
+.moLabel    { font-size: 0.75rem; font-weight: 500; color: var(--text-secondary); margin-left: 2px; }
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 2px 0;
+}
+.warnBadge {
+  font-size: 0.75rem;
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 20%, transparent);
+  border-radius: var(--radius-full);
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+/* ── Accessibility: screen-reader only ── */
+.srOnly {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .incomeRow { gap: var(--space-3); }
+  .incomeField .numInput { font-size: 1.1rem; }
+  .freeVal { font-size: 1.2rem; }
+  .addForm { gap: var(--space-1); }
+  .addCatSelect { min-width: 120px; }
+}

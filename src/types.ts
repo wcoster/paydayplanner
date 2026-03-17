@@ -2,47 +2,72 @@ export type TimelineEventType = 'deposito' | 'stock_lump' | 'extra_repayment';
 
 export interface TimelineEvent {
   id: string;
-  year: number;              // 1-indexed year when event fires (year 1 = first year)
+  year: number;
   type: TimelineEventType;
   amount: number;
   label?: string;
-  depositoDuration?: number; // years (for deposito type)
-  depositoRate?: number;     // % annual (for deposito type)
+  depositoDuration?: number;
+  depositoRate?: number;
 }
 
+export type ExpenseCategory =
+  | 'housing' | 'utilities' | 'insurance' | 'subscriptions'
+  | 'food' | 'transport' | 'leisure' | 'other';
+
+export interface Expense {
+  id: string;
+  label: string;
+  amount: number;
+  category: ExpenseCategory;
+}
+
+export const CATEGORY_ICONS: Record<ExpenseCategory, string> = {
+  housing:       '🏠',
+  utilities:     '⚡',
+  insurance:     '🛡️',
+  subscriptions: '📱',
+  food:          '🛒',
+  transport:     '🚗',
+  leisure:       '🎭',
+  other:         '📋',
+};
+
+export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  'housing', 'food', 'transport', 'utilities',
+  'insurance', 'subscriptions', 'leisure', 'other',
+];
+
 export interface PlannerInputs {
-  years: number;
-  freeIncome: number;
-  raiseRate: number;
-  revInit: number;
-  revMo: number;
-  revRate1: number;
-  revTier: number;
-  revRate2: number;
-  extInit: number;
-  extMo: number;
-  extRate: number;
-  debtInit: number;
-  debtMo: number;
-  debtRate: number;
-  // Stocks
-  stockInit: number;
-  stockMo: number;
-  stockRate: number;
-  // Buffer
+  years:        number;
+  netIncome:    number;   // net monthly take-home pay (replaces freeIncome)
+  raiseRate:    number;
+  expenses:     Expense[]; // monthly fixed + variable expenses
+  revInit:      number;
+  revMo:        number;
+  revRate1:     number;
+  revTier:      number;
+  revRate2:     number;
+  extInit:      number;
+  extMo:        number;
+  extRate:      number;
+  stockInit:    number;
+  stockMo:      number;
+  stockRate:    number;
+  debtInit:     number;
+  debtMo:       number;
+  debtRate:     number;
   bufferAmount: number;
-  // Timeline events
-  events: TimelineEvent[];
+  events:       TimelineEvent[];
 }
 
 export interface SimResult {
-  wealthHist:   number[];
-  debtHist:     number[];
-  assetHist:    number[];
-  stockHist:    number[];
-  depositoHist: number[];
+  wealthHist:    number[];
+  debtHist:      number[];
+  assetHist:     number[];
+  stockHist:     number[];
+  depositoHist:  number[];
   debtFreeMonth: number | null;
-  finalDebt:    number;
+  finalDebt:     number;
 }
 
 export interface OptimizePayload {
