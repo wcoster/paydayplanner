@@ -38,19 +38,20 @@ const DEFAULT_INPUTS_BASE = {
   netIncome:    3_200,   // net monthly take-home (user can override)
   raiseRate:    2,
   revInit:      5000,
-  revMo:        300,
+  revMo:        0,
   revRate1:     1.5,
   revTier:      50000,
   revRate2:     0.5,
   extInit:      3000,
-  extMo:        150,
+  extMo:        0,
   extRate:      3.5,
   debtInit:     28_000,
   debtMo:       250,
+  extraDebtMo:  0,
   debtRate:     2.56,
   debtPlan:     'manual' as const,
   stockInit:    0,
-  stockMo:      100,
+  stockMo:      0,
   stockRate:    7.0,
   bufferAmount:   5000,
   bufferOverflow: 'ext' as const,
@@ -120,21 +121,12 @@ export default function WealthPlanner() {
     return safeInputs.debtMo;
   }, [safeInputs.debtPlan, safeInputs.grossIncome, safeInputs.debtMo]);
 
-  // DUO payment at end of plan period (after raises)
-  const effectiveDebtMoEnd = useMemo(() => {
-    if (safeInputs.debtPlan !== 'manual') {
-      const grossEnd = safeInputs.grossIncome * Math.pow(1 + safeInputs.raiseRate / 100, safeInputs.years);
-      return Math.round(duoMonthlyPayment(grossEnd));
-    }
-    return null;
-  }, [safeInputs.debtPlan, safeInputs.grossIncome, safeInputs.raiseRate, safeInputs.years]);
-
   const effectiveInputs = useMemo(
-    () => ({ ...safeInputs, debtMo: effectiveDebtMo }),
+    () => ({ ...safeInputs, debtMo: effectiveDebtMo + (safeInputs.extraDebtMo ?? 0) }),
     [safeInputs, effectiveDebtMo],
   );
 
-  const freeBudget = safeInputs.netIncome - totalExpenses;
+  const freeBudget = safeInputs.netIncome - totalExpenses - effectiveDebtMo;
 
   // Monthly amount to earmark for upcoming savings goals
   const savingsGoalMonthly = useMemo(() =>
@@ -156,7 +148,7 @@ export default function WealthPlanner() {
 
   const handleApplyBest = useCallback((best: OptimizeResult) => {
     if (animRef.current) cancelAnimationFrame(animRef.current);
-    const s0 = { rev: safeInputs.revMo, ext: safeInputs.extMo, debt: safeInputs.debtMo, stock: safeInputs.stockMo };
+    const s0 = { rev: safeInputs.revMo, ext: safeInputs.extMo, stock: safeInputs.stockMo, extraDebt: safeInputs.extraDebtMo ?? 0 };
     const t0  = performance.now();
     const dur = 600;
     function step(now: number) {
@@ -164,15 +156,15 @@ export default function WealthPlanner() {
       const e = 1 - Math.pow(1 - p, 3);
       setInputs(prev => ({
         ...prev,
-        revMo:   Math.round(s0.rev   + (best.bestRev   - s0.rev)   * e),
-        extMo:   Math.round(s0.ext   + (best.bestExt   - s0.ext)   * e),
-        debtMo:  Math.round(s0.debt  + (best.bestDebt  - s0.debt)  * e),
-        stockMo: Math.round(s0.stock + (best.bestStock - s0.stock) * e),
+        revMo:       Math.round(s0.rev       + (best.bestRev       - s0.rev)       * e),
+        extMo:       Math.round(s0.ext       + (best.bestExt       - s0.ext)       * e),
+        stockMo:     Math.round(s0.stock     + (best.bestStock     - s0.stock)     * e),
+        extraDebtMo: Math.round(s0.extraDebt + (best.bestExtraDebt - s0.extraDebt) * e),
       }));
       if (p < 1) animRef.current = requestAnimationFrame(step);
     }
     animRef.current = requestAnimationFrame(step);
-  }, [safeInputs.revMo, safeInputs.extMo, safeInputs.debtMo, safeInputs.stockMo]);
+  }, [safeInputs.revMo, safeInputs.extMo, safeInputs.stockMo, safeInputs.extraDebtMo]);
 
   const optimizePayload = useMemo(() => ({
     revStart:    safeInputs.revInit,
@@ -193,7 +185,7 @@ export default function WealthPlanner() {
     raiseRate:   safeInputs.raiseRate,
     curRevMo:    safeInputs.revMo,
     curExtMo:    safeInputs.extMo,
-    curDebtMo:   effectiveDebtMo,
+    curDebtMo:   effectiveDebtMo + (safeInputs.extraDebtMo ?? 0),
     curStockMo:   safeInputs.stockMo,
     bufferAmount: safeInputs.bufferAmount,
   }), [safeInputs, freeBudget, effectiveDebtMo]);
@@ -237,11 +229,14 @@ export default function WealthPlanner() {
             netIncome={safeInputs.netIncome}
             raiseRate={safeInputs.raiseRate}
             expenses={safeInputs.expenses}
-            allocated={safeInputs.revMo + safeInputs.extMo + effectiveDebtMo + safeInputs.stockMo}
+            allocated={safeInputs.revMo + safeInputs.extMo + safeInputs.stockMo}
+            effectiveDebtMo={effectiveDebtMo}
+            debtPlanFixed={safeInputs.debtPlan !== 'manual'}
             onGrossIncomeChange={v => update('grossIncome', v)}
             onNetIncomeChange={v => update('netIncome', v)}
             onRaiseRateChange={v => update('raiseRate', v)}
             onExpensesChange={v => update('expenses', v as Expense[])}
+            onDebtMoChange={v => update('debtMo', v)}
           />
         </div>
       </section>
@@ -260,18 +255,16 @@ export default function WealthPlanner() {
             freeBudget={freeBudget}
             revMo={safeInputs.revMo}
             extMo={safeInputs.extMo}
-            debtMo={effectiveDebtMo}
             stockMo={safeInputs.stockMo}
+            hasDebt={safeInputs.debtInit > 0}
+            extraDebtMo={safeInputs.extraDebtMo ?? 0}
             bufferAmount={safeInputs.bufferAmount}
             bufferOverflow={safeInputs.bufferOverflow}
-            hasDebt={safeInputs.debtInit > 0}
-            debtPlanFixed={safeInputs.debtPlan !== 'manual'}
-            duoPaymentEnd={effectiveDebtMoEnd}
             savingsGoalMonthly={savingsGoalMonthly}
             onRevMoChange={v           => update('revMo',          v)}
             onExtMoChange={v           => update('extMo',          v)}
-            onDebtMoChange={v          => update('debtMo',         v)}
             onStockMoChange={v         => update('stockMo',        v)}
+            onExtraDebtMoChange={v     => update('extraDebtMo',    v)}
             onBufferAmountChange={v    => update('bufferAmount',   v)}
             onBufferOverflowChange={v  => update('bufferOverflow', v)}
           />
@@ -284,8 +277,9 @@ export default function WealthPlanner() {
           payload={optimizePayload}
           currentRevMo={safeInputs.revMo}
           currentExtMo={safeInputs.extMo}
-          currentDebtMo={safeInputs.debtMo}
           currentStockMo={safeInputs.stockMo}
+          currentExtraDebtMo={safeInputs.extraDebtMo ?? 0}
+          hasDebt={safeInputs.debtInit > 0}
           years={safeInputs.years}
           onApplyBest={handleApplyBest}
         />

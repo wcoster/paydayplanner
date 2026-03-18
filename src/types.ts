@@ -58,6 +58,7 @@ export interface PlannerInputs {
   stockRate:    number;
   debtInit:     number;
   debtMo:       number;
+  extraDebtMo:  number;   // voluntary extra monthly repayment on top of the mandatory payment
   debtRate:     number;
   debtPlan:     DuoPlan;  // 'manual' | 'sf15' | 'sf35'
   bufferAmount:   number;
@@ -99,8 +100,8 @@ export interface OptimizePayload {
 export interface OptimizeResult {
   bestRev:       number;
   bestExt:       number;
-  bestDebt:      number;
   bestStock:     number;
+  bestExtraDebt: number;
   bestWealth:    number;
   currentWealth: number;
 }

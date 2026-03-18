@@ -6,19 +6,20 @@ import OptimizerWorker from '../../workers/optimizer.worker?worker';
 import styles from './OptimizeSection.module.css';
 
 interface Props {
-  payload:        OptimizePayload;
-  currentRevMo:   number;
-  currentExtMo:   number;
-  currentDebtMo:  number;
-  currentStockMo: number;
-  years:          number;
-  onApplyBest:    (result: OptimizeResult) => void;
+  payload:              OptimizePayload;
+  currentRevMo:         number;
+  currentExtMo:         number;
+  currentStockMo:       number;
+  currentExtraDebtMo:   number;
+  hasDebt:              boolean;
+  years:                number;
+  onApplyBest:          (result: OptimizeResult) => void;
 }
 
 type State = 'idle' | 'computing' | 'done';
 
 export default function OptimizeSection({
-  payload, currentRevMo, currentExtMo, currentDebtMo, currentStockMo, years, onApplyBest,
+  payload, currentRevMo, currentExtMo, currentStockMo, currentExtraDebtMo, hasDebt, years, onApplyBest,
 }: Props) {
   const { t } = useTranslation();
   const [state,   setState]   = useState<State>('idle');
@@ -66,10 +67,10 @@ export default function OptimizeSection({
 
   // Build comparison rows
   const rows = result ? [
-    { key: 'bank',    label: t('wealthPlanner.optimize.bank'),    cur: currentRevMo,   opt: result.bestRev   },
-    { key: 'deposit', label: t('wealthPlanner.optimize.deposit'), cur: currentExtMo,   opt: result.bestExt   },
-    { key: 'stocks',  label: t('wealthPlanner.optimize.stocks'),  cur: currentStockMo, opt: result.bestStock  },
-    { key: 'duo',     label: t('wealthPlanner.optimize.duo'),     cur: currentDebtMo,  opt: result.bestDebt  },
+    { key: 'bank',      label: t('wealthPlanner.optimize.bank'),      cur: currentRevMo,       opt: result.bestRev        },
+    { key: 'deposit',   label: t('wealthPlanner.optimize.deposit'),   cur: currentExtMo,       opt: result.bestExt        },
+    { key: 'stocks',    label: t('wealthPlanner.optimize.stocks'),    cur: currentStockMo,     opt: result.bestStock      },
+    ...(hasDebt ? [{ key: 'extraDebt', label: t('wealthPlanner.optimize.extraDebt'), cur: currentExtraDebtMo, opt: result.bestExtraDebt }] : []),
   ] : [];
 
   return (

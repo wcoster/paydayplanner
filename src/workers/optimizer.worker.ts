@@ -30,23 +30,25 @@ self.onmessage = (e: MessageEvent<OptimizePayload>) => {
   );
 
   let bestWealth = -Infinity;
-  let bestRev = 0, bestExt = 0, bestDebt = 0, bestStock = 0;
+  let bestRev = 0, bestExt = 0, bestStock = 0, bestExtraDebt = 0;
 
+  // Mandatory debt payment (curDebtMo) is a fixed expense already excluded from
+  // totalBudget. The extra-debt loop optimises voluntary overpayments on top.
   for (let d = 0; d <= totalBudget; d += step) {
     for (let r = revMin; r <= totalBudget - d; r += step) {
       for (let s = 0; s <= totalBudget - d - r; s += step) {
         const ex = totalBudget - d - r - s;
         const w  = simulate(
           revStart, extStart, debtStart, stockStart,
-          r, ex, d, s,
+          r, ex, curDebtMo + d, s,
           rR1, rR2, revTier, eR, dR, sR,
           simMonths, raiseRate,
         );
-        if (w > bestWealth) { bestWealth = w; bestRev = r; bestExt = ex; bestDebt = d; bestStock = s; }
+        if (w > bestWealth) { bestWealth = w; bestRev = r; bestExt = ex; bestExtraDebt = d; bestStock = s; }
       }
     }
   }
 
-  const result: OptimizeResult = { bestRev, bestExt, bestDebt, bestStock, bestWealth, currentWealth };
+  const result: OptimizeResult = { bestRev, bestExt, bestStock, bestExtraDebt, bestWealth, currentWealth };
   (self as DedicatedWorkerGlobalScope).postMessage(result);
 };

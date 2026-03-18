@@ -8,41 +8,39 @@ interface Props {
   freeBudget:              number;
   revMo:                   number;
   extMo:                   number;
-  debtMo:                  number;
   stockMo:                 number;
+  hasDebt:                 boolean;
+  extraDebtMo:             number;
   bufferAmount:            number;
   bufferOverflow:          'ext' | 'stock';
-  hasDebt:                 boolean;
-  debtPlanFixed?:          boolean;
-  duoPaymentEnd?:          number | null;
   savingsGoalMonthly?:     number;
   onRevMoChange:           (v: number) => void;
   onExtMoChange:           (v: number) => void;
-  onDebtMoChange:          (v: number) => void;
   onStockMoChange:         (v: number) => void;
+  onExtraDebtMoChange:     (v: number) => void;
   onBufferAmountChange:    (v: number) => void;
   onBufferOverflowChange:  (v: 'ext' | 'stock') => void;
 }
 
-interface AllocItem { key: string; label: string; value: number; color: string; onChange: (v: number) => void; readOnly?: boolean; endValue?: number | null; }
+interface AllocItem { key: string; label: string; value: number; color: string; onChange: (v: number) => void; }
 
 export default function AllocationSection({
-  freeBudget, revMo, extMo, debtMo, stockMo, bufferAmount, bufferOverflow, hasDebt,
-  debtPlanFixed = false, duoPaymentEnd = null, savingsGoalMonthly = 0,
-  onRevMoChange, onExtMoChange, onDebtMoChange, onStockMoChange,
+  freeBudget, revMo, extMo, stockMo, hasDebt, extraDebtMo, bufferAmount, bufferOverflow,
+  savingsGoalMonthly = 0,
+  onRevMoChange, onExtMoChange, onStockMoChange, onExtraDebtMoChange,
   onBufferAmountChange, onBufferOverflowChange,
 }: Props) {
   const { t } = useTranslation();
 
-  const allocated  = revMo + extMo + debtMo + stockMo;
+  const allocated  = revMo + extMo + stockMo + (hasDebt ? extraDebtMo : 0);
   const remaining  = freeBudget - allocated;
   const overBudget = remaining < 0;
 
   const allocs: AllocItem[] = [
-    { key: 'bank',    label: t('wealthPlanner.allocation.bank'),    value: revMo,   color: 'rgba(96,165,250,0.85)',  onChange: onRevMoChange },
-    { key: 'deposit', label: t('wealthPlanner.allocation.deposit'), value: extMo,   color: 'rgba(74,222,128,0.85)',  onChange: onExtMoChange },
-    { key: 'stocks',  label: t('wealthPlanner.allocation.stocks'),  value: stockMo, color: 'rgba(167,139,250,0.85)', onChange: onStockMoChange },
-    ...(hasDebt ? [{ key: 'duo', label: t('wealthPlanner.allocation.duo'), value: debtMo, color: 'rgba(248,113,113,0.85)', onChange: onDebtMoChange, readOnly: debtPlanFixed, endValue: debtPlanFixed ? duoPaymentEnd : null }] : []),
+    { key: 'bank',    label: t('wealthPlanner.allocation.bank'),    value: revMo,      color: 'rgba(96,165,250,0.85)',  onChange: onRevMoChange },
+    { key: 'deposit', label: t('wealthPlanner.allocation.deposit'), value: extMo,      color: 'rgba(74,222,128,0.85)',  onChange: onExtMoChange },
+    { key: 'stocks',  label: t('wealthPlanner.allocation.stocks'),  value: stockMo,    color: 'rgba(167,139,250,0.85)', onChange: onStockMoChange },
+    ...(hasDebt ? [{ key: 'extraDebt', label: t('wealthPlanner.allocation.extraDebt'), value: extraDebtMo, color: 'rgba(248,113,113,0.85)', onChange: onExtraDebtMoChange }] : []),
   ];
 
   const chartItems = [...allocs];
@@ -162,22 +160,6 @@ function BudgetBar({ allocated, freeBudget, overBudget }: { allocated: number; f
 function AllocRow({ item }: { item: AllocItem }) {
   const { t } = useTranslation();
   const id    = useId();
-
-  if (item.readOnly) {
-    return (
-      <div className={`${styles.allocRow} ${styles.allocRowFixed}`}>
-        <div className={styles.dot} style={{ background: item.color }} />
-        <label htmlFor={id} className={styles.allocLabel}>{item.label}</label>
-        <div className={styles.allocInputWrap}>
-          <span className={styles.euro}>€</span>
-          <span className={`${styles.allocInput} ${styles.allocInputFixed}`}>
-            {item.value.toLocaleString()}
-          </span>
-          <span className={styles.mo}>/mo</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.allocRow}>

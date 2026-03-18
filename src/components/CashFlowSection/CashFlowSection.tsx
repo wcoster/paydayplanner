@@ -10,11 +10,14 @@ interface Props {
   netIncome:           number;
   raiseRate:           number;
   expenses:            Expense[];
-  allocated:           number;   // revMo + extMo + debtMo + stockMo
+  allocated:           number;   // revMo + extMo + stockMo
+  effectiveDebtMo:     number;
+  debtPlanFixed:       boolean;
   onGrossIncomeChange: (v: number) => void;
   onNetIncomeChange:   (v: number) => void;
   onRaiseRateChange:   (v: number) => void;
   onExpensesChange:    (expenses: Expense[]) => void;
+  onDebtMoChange:      (v: number) => void;
 }
 
 function newId() {
@@ -23,7 +26,8 @@ function newId() {
 
 export default function CashFlowSection({
   grossIncome, estimatedNet, netIncome, raiseRate, expenses, allocated,
-  onGrossIncomeChange, onNetIncomeChange, onRaiseRateChange, onExpensesChange,
+  effectiveDebtMo, debtPlanFixed,
+  onGrossIncomeChange, onNetIncomeChange, onRaiseRateChange, onExpensesChange, onDebtMoChange,
 }: Props) {
   const { t }       = useTranslation();
   const grossId     = useId();
@@ -34,7 +38,7 @@ export default function CashFlowSection({
   const [newLabel, setNewLabel] = useState('');
   const [newAmount, setNewAmount] = useState('');
 
-  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0) + effectiveDebtMo;
   const freeBudget    = netIncome - totalExpenses;
   const surplus       = freeBudget - allocated;
   const overBudget    = surplus < 0;
@@ -132,6 +136,14 @@ export default function CashFlowSection({
               onDelete={() => deleteExpense(exp.id)}
             />
           ))}
+          {effectiveDebtMo > 0 && (
+            <DebtRow
+              amount={effectiveDebtMo}
+              fixed={debtPlanFixed}
+              label={t('wealthPlanner.allocation.duo')}
+              onChange={onDebtMoChange}
+            />
+          )}
         </div>
 
         {adding ? (
@@ -253,6 +265,43 @@ function ExpenseRow({ expense, onUpdate, onDelete }: {
         onClick={onDelete}
         aria-label={`${t('wealthPlanner.cashFlow.deleteExpense')} ${expense.label}`}
       >×</button>
+    </div>
+  );
+}
+
+// ── Fixed debt repayment row ─────────────────────────────────────────────────
+
+function DebtRow({ amount, fixed, label, onChange }: {
+  amount:   number;
+  fixed:    boolean;
+  label:    string;
+  onChange: (v: number) => void;
+}) {
+  const { t } = useTranslation();
+  const amtId = useId();
+  return (
+    <div className={styles.expRow} role="listitem">
+      <span className={styles.catIcon}>💳</span>
+      <span className={styles.expLabel}>{label}</span>
+      <div className={styles.inputPre}>
+        <span className={styles.pre}>€</span>
+        <label htmlFor={amtId} className={styles.srOnly}>{t('wealthPlanner.cashFlow.amount')}</label>
+        {fixed ? (
+          <span className={`${styles.numInput} ${styles.expAmt}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            {amount.toLocaleString()}
+          </span>
+        ) : (
+          <input
+            id={amtId}
+            type="number"
+            value={amount}
+            step={10}
+            min={0}
+            onChange={e => onChange(parseFloat(e.target.value) || 0)}
+            className={`${styles.numInput} ${styles.expAmt}`}
+          />
+        )}
+      </div>
     </div>
   );
 }
