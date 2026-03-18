@@ -1,4 +1,4 @@
-export type TimelineEventType = 'deposito' | 'stock_lump' | 'extra_repayment';
+export type TimelineEventType = 'deposito' | 'stock_lump' | 'extra_repayment' | 'savings_goal';
 
 export interface TimelineEvent {
   id: string;
@@ -37,9 +37,12 @@ export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
   'insurance', 'subscriptions', 'leisure', 'other',
 ];
 
+export type DuoPlan = 'manual' | 'sf15' | 'sf35';
+
 export interface PlannerInputs {
   years:        number;
-  netIncome:    number;   // net monthly take-home pay (replaces freeIncome)
+  grossIncome:  number;   // annual gross income — primary income field
+  netIncome:    number;   // net monthly take-home pay (after tax; may be set manually)
   raiseRate:    number;
   expenses:     Expense[]; // monthly fixed + variable expenses
   revInit:      number;
@@ -56,8 +59,10 @@ export interface PlannerInputs {
   debtInit:     number;
   debtMo:       number;
   debtRate:     number;
-  bufferAmount: number;
-  events:       TimelineEvent[];
+  debtPlan:     DuoPlan;  // 'manual' | 'sf15' | 'sf35'
+  bufferAmount:   number;
+  bufferOverflow: 'ext' | 'stock'; // where revMo goes once emergency fund is full
+  events:         TimelineEvent[];
 }
 
 export interface SimResult {
@@ -71,23 +76,24 @@ export interface SimResult {
 }
 
 export interface OptimizePayload {
-  revStart:    number;
-  extStart:    number;
-  debtStart:   number;
-  stockStart:  number;
-  rR1:         number;
-  rR2:         number;
-  revTier:     number;
-  eR:          number;
-  dR:          number;
-  sR:          number;
-  totalBudget: number;
-  simMonths:   number;
-  raiseRate:   number;
-  curRevMo:    number;
-  curExtMo:    number;
-  curDebtMo:   number;
-  curStockMo:  number;
+  revStart:     number;
+  extStart:     number;
+  debtStart:    number;
+  stockStart:   number;
+  rR1:          number;
+  rR2:          number;
+  revTier:      number;
+  eR:           number;
+  dR:           number;
+  sR:           number;
+  totalBudget:  number;
+  simMonths:    number;
+  raiseRate:    number;
+  curRevMo:     number;
+  curExtMo:     number;
+  curDebtMo:    number;
+  curStockMo:   number;
+  bufferAmount: number; // used to set minimum revMo floor
 }
 
 export interface OptimizeResult {

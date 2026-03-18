@@ -10,28 +10,47 @@ A module launcher — a home page that links to individual tools. Each module is
 
 ## Modules
 
-### 🏑 Vermogenplanner (`/vermogenplanner`)
+### 💸 Liquiditeitsplanner (`/vermogenplanner`)
 
-A long-term wealth strategy tool. Models three financial products simultaneously and projects net worth over 1–30 years.
+A personal liquidity and wealth planner. Models cashflow, expenses, savings, stocks, and student debt simultaneously — projecting net worth over 1–50 years.
 
-**Inputs**
-- Free monthly budget + annual salary raise rate
-- Savings account (betaalrekening) — starting balance, monthly deposit, tiered interest (two rates with configurable threshold)
-- Deposit account — starting balance, monthly deposit, fixed interest rate
-- DUO student loan — outstanding balance, monthly repayment, interest rate
+**Cash flow**
+- Annual gross income with Dutch 2025 tax estimator (net income hint)
+- Editable net monthly take-home + annual raise rate
+- Itemised monthly expenses by category (housing, food, transport, etc.) with add/edit/delete
+- Free budget = net income − expenses − allocations
+
+**Monthly allocation**
+- Split free budget across: current account, savings account, stocks, DUO repayment
+- Doughnut chart shows allocation breakdown with unallocated remainder
+- Budget utilisation bar; over-budget state highlighted in red
+- Emergency fund (buffer) with configurable target amount; once full, overflow automatically routes to savings or stocks
+
+**DUO student loan**
+- Three repayment plans: manual, SF15 (15-yr, pre-2015), SF35 (35-yr, post-2015)
+- SF15/SF35 payment auto-calculated from gross income: `max(0, (gross − €22,452) × 4% / 12)`
+- Payment grows each year as gross income rises (fixed threshold means faster growth)
+- Forgiveness after plan period; until then, the allocation row is read-only
+
+**One-time events (timeline)**
+- Savings goals — set a target amount and year; required monthly set-aside shown inline
+- Term deposits — lump sum placed at a fixed rate for a fixed duration
+- Stock lump sums — one-off investment into the stock portfolio
+- Extra debt repayments
 
 **Simulation**
-- Full month-by-month compound interest simulation
-- Debt payoff detection: once debt hits zero, the monthly repayment automatically redirects to the savings account
-- Projects salary raises across all contributions over time
-- All three balances charted on a single line chart (net wealth, total savings, remaining debt)
+- Month-by-month simulation across the full horizon
+- Tiered interest on current account (two rates with configurable threshold)
+- Simple monthly interest on savings and debt
+- Salary raises applied to net income and DUO payment each year
+- Line chart: net wealth, liquid savings (current + savings, no stocks), stocks, remaining debt
 
 **Optimizer**
-- Brute-force search over all valid splits of the monthly budget (€10–€50 steps depending on budget size)
-- Runs in a dedicated Web Worker so the UI never freezes
-- Finds the allocation that maximises net wealth after N years
-- "Apply to my plan" button animates all three inputs simultaneously with a cubic ease-out over 600ms
-- Comes with confetti
+- Brute-force search over all valid budget splits (€10–€50 steps)
+- Runs in a Web Worker so the UI never freezes
+- Enforces a minimum current-account contribution to fill the emergency fund
+- Result card shows current vs. optimal per allocation with colour-coded delta badges
+- "Apply to my plan" animates all inputs with a cubic ease-out over 600ms
 
 ## Themes
 
@@ -81,12 +100,13 @@ src/
 │   ├── ModuleLayout/        # Shared wrapper for all modules (back button, glass card)
 │   ├── ModuleCard/          # Home page card per module
 │   ├── LangThemeToggle/     # Fixed top-right — NL/EN + 🌌/🏑/🌅 theme picker
-│   └── [WealthPlanner UI]/  # IncomeBar, StatGrid, InputGrid, AllocationSection, StrategyChart, OptimizeSection
+│   └── [WealthPlanner UI]/  # CashFlowSection, AllocationSection, InputGrid, StatGrid, StrategyChart, OptimizeSection, TimelineEditor
 ├── pages/
 │   ├── Home/                # Module launcher
 │   └── WealthPlanner/       # Wealth planner page
 ├── utils/
 │   ├── simulation.ts        # Pure simulation functions (used by page + worker)
+│   ├── tax.ts               # Dutch 2025 net income estimator (tax brackets, AHK, arbeidskorting)
 │   └── confetti.ts          # Canvas confetti burst
 ├── workers/
 │   └── optimizer.worker.ts  # Brute-force optimizer (runs off main thread)

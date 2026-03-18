@@ -8,7 +8,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip,
 
 import { useTranslation } from 'react-i18next';
 import type { PlannerInputs, Expense, OptimizeResult } from '../../types';
-import { runSimulation, getDebtFreeResult, monthlyRate } from '../../utils/simulation';
+import { runSimulation, getDebtFreeResult, monthlyRate, duoMonthlyPayment, DUO_THRESHOLD } from '../../utils/simulation';
+import { estimateNetMonthly } from '../../utils/tax';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import ModuleLayout      from '../../components/ModuleLayout/ModuleLayout';
 import CashFlowSection   from '../../components/CashFlowSection/CashFlowSection';
@@ -20,21 +21,22 @@ import OptimizeSection   from '../../components/OptimizeSection/OptimizeSection'
 import TimelineEditor    from '../../components/TimelineEditor/TimelineEditor';
 import styles from './WealthPlanner.module.css';
 
-const DEFAULT_EXPENSES = [
-  { id: 'e1', label: 'Rent / Mortgage',   category: 'housing'       as const, amount: 900 },
-  { id: 'e2', label: 'Groceries',          category: 'food'          as const, amount: 350 },
-  { id: 'e3', label: 'Health insurance',   category: 'insurance'     as const, amount: 135 },
-  { id: 'e4', label: 'Transport',          category: 'transport'     as const, amount: 150 },
-  { id: 'e5', label: 'Utilities',          category: 'utilities'     as const, amount: 110 },
-  { id: 'e6', label: 'Subscriptions',      category: 'subscriptions' as const, amount: 55  },
-  { id: 'e7', label: 'Leisure',            category: 'leisure'       as const, amount: 150 },
+// Numeric defaults only — labels are derived from translations inside the component
+const DEFAULT_EXPENSE_SEEDS = [
+  { id: 'e1', category: 'housing'       as const, amount: 900 },
+  { id: 'e2', category: 'food'          as const, amount: 350 },
+  { id: 'e3', category: 'insurance'     as const, amount: 135 },
+  { id: 'e4', category: 'transport'     as const, amount: 150 },
+  { id: 'e5', category: 'utilities'     as const, amount: 110 },
+  { id: 'e6', category: 'subscriptions' as const, amount: 55  },
+  { id: 'e7', category: 'leisure'       as const, amount: 150 },
 ];
 
-const DEFAULT_INPUTS: PlannerInputs = {
+const DEFAULT_INPUTS_BASE = {
   years:        5,
-  netIncome:    3200,
+  grossIncome:  52_000,  // annual gross (≈ median Netherlands 2025)
+  netIncome:    3_200,   // net monthly take-home (user can override)
   raiseRate:    2,
-  expenses:     DEFAULT_EXPENSES,
   revInit:      5000,
   revMo:        300,
   revRate1:     1.5,
@@ -43,34 +45,56 @@ const DEFAULT_INPUTS: PlannerInputs = {
   extInit:      3000,
   extMo:        150,
   extRate:      3.5,
-  debtInit:     28000,
+  debtInit:     28_000,
   debtMo:       250,
-  debtRate:     2.57,
+  debtRate:     2.56,
+  debtPlan:     'manual' as const,
   stockInit:    0,
   stockMo:      100,
   stockRate:    7.0,
-  bufferAmount: 5000,
-  events:       [],
+  bufferAmount:   5000,
+  bufferOverflow: 'ext' as const,
+  events:         [] as PlannerInputs['events'],
 };
 
 export default function WealthPlanner() {
   const { t }    = useTranslation();
   const yearId   = useId();
-  const [inputs, setInputs] = useLocalStorage<PlannerInputs>('module:vermogenplanner', DEFAULT_INPUTS);
+
+  // Build localised default expenses once per language change
+  const defaultExpenses = useMemo(() =>
+    DEFAULT_EXPENSE_SEEDS.map(s => ({
+      ...s,
+      label: t(`wealthPlanner.cashFlow.categories.${s.category}`),
+    })),
+    [t],
+  );
+
+  const defaultInputs: PlannerInputs = useMemo(() => ({
+    ...DEFAULT_INPUTS_BASE,
+    expenses: defaultExpenses,
+  }), [defaultExpenses]);
+
+  const [inputs, setInputs] = useLocalStorage<PlannerInputs>('module:vermogenplanner', defaultInputs);
   const animRef  = useRef<number | null>(null);
 
-  // Merge with defaults — handles old saved state missing new fields (freeIncome → netIncome, expenses)
+  // Merge with defaults — handles old saved state missing new fields
   const safeInputs = useMemo((): PlannerInputs => {
-    const merged: PlannerInputs = { ...DEFAULT_INPUTS, ...inputs, events: inputs.events ?? [] };
+    const merged: PlannerInputs = { ...defaultInputs, ...inputs, events: inputs.events ?? [] };
     // Migrate old freeIncome field
     if (!merged.netIncome && (inputs as unknown as { freeIncome?: number }).freeIncome) {
       merged.netIncome = (inputs as unknown as { freeIncome: number }).freeIncome;
     }
+    // Back-fill grossIncome from old debtGrossIncome if present
+    if (!merged.grossIncome) {
+      const legacy = inputs as unknown as { debtGrossIncome?: number };
+      merged.grossIncome = legacy.debtGrossIncome ?? defaultInputs.grossIncome;
+    }
     if (!merged.expenses || merged.expenses.length === 0) {
-      merged.expenses = DEFAULT_EXPENSES;
+      merged.expenses = defaultExpenses;
     }
     return merged;
-  }, [inputs]);
+  }, [inputs, defaultInputs, defaultExpenses]);
 
   function update<K extends keyof PlannerInputs>(key: K, value: PlannerInputs[K]) {
     setInputs(prev => ({ ...prev, [key]: value }));
@@ -81,10 +105,47 @@ export default function WealthPlanner() {
     () => safeInputs.expenses.reduce((s, e) => s + e.amount, 0),
     [safeInputs.expenses],
   );
+
+  // Dutch tax estimate for the net-income hint in the UI
+  const estimatedNet = useMemo(
+    () => estimateNetMonthly(safeInputs.grossIncome),
+    [safeInputs.grossIncome],
+  );
+
+  // For SF15/SF35 plans, override debtMo with the DUO-calculated amount (year 1)
+  const effectiveDebtMo = useMemo(() => {
+    if (safeInputs.debtPlan !== 'manual') {
+      return Math.round(duoMonthlyPayment(safeInputs.grossIncome));
+    }
+    return safeInputs.debtMo;
+  }, [safeInputs.debtPlan, safeInputs.grossIncome, safeInputs.debtMo]);
+
+  // DUO payment at end of plan period (after raises)
+  const effectiveDebtMoEnd = useMemo(() => {
+    if (safeInputs.debtPlan !== 'manual') {
+      const grossEnd = safeInputs.grossIncome * Math.pow(1 + safeInputs.raiseRate / 100, safeInputs.years);
+      return Math.round(duoMonthlyPayment(grossEnd));
+    }
+    return null;
+  }, [safeInputs.debtPlan, safeInputs.grossIncome, safeInputs.raiseRate, safeInputs.years]);
+
+  const effectiveInputs = useMemo(
+    () => ({ ...safeInputs, debtMo: effectiveDebtMo }),
+    [safeInputs, effectiveDebtMo],
+  );
+
   const freeBudget = safeInputs.netIncome - totalExpenses;
 
-  const simResult      = useMemo(() => runSimulation(safeInputs), [safeInputs]);
-  const debtFreeResult = useMemo(() => getDebtFreeResult(simResult, safeInputs), [simResult, safeInputs]);
+  // Monthly amount to earmark for upcoming savings goals
+  const savingsGoalMonthly = useMemo(() =>
+    safeInputs.events
+      .filter(e => e.type === 'savings_goal' && e.year > 0)
+      .reduce((sum, e) => sum + e.amount / (e.year * 12), 0),
+    [safeInputs.events],
+  );
+
+  const simResult      = useMemo(() => runSimulation(effectiveInputs), [effectiveInputs]);
+  const debtFreeResult = useMemo(() => getDebtFreeResult(simResult, effectiveInputs), [simResult, effectiveInputs]);
   const debtFreeText   = t(debtFreeResult.key, debtFreeResult as Record<string, unknown>);
   const totalMonths    = safeInputs.years * 12;
 
@@ -122,16 +183,20 @@ export default function WealthPlanner() {
     rR2:         monthlyRate(safeInputs.revRate2),
     revTier:     safeInputs.revTier,
     eR:          monthlyRate(safeInputs.extRate),
-    dR:          monthlyRate(safeInputs.debtRate),
+    dR:          safeInputs.debtPlan !== 'manual'
+                   ? safeInputs.debtRate / 100 / 12
+                   : monthlyRate(safeInputs.debtRate),
+    // Note: optimizer uses fixed debtMo per month; dynamic DUO growth handled in main sim only
     sR:          monthlyRate(safeInputs.stockRate),
     totalBudget: Math.max(freeBudget, 0),
     simMonths:   safeInputs.years * 12,
     raiseRate:   safeInputs.raiseRate,
     curRevMo:    safeInputs.revMo,
     curExtMo:    safeInputs.extMo,
-    curDebtMo:   safeInputs.debtMo,
-    curStockMo:  safeInputs.stockMo,
-  }), [safeInputs, freeBudget]);
+    curDebtMo:   effectiveDebtMo,
+    curStockMo:   safeInputs.stockMo,
+    bufferAmount: safeInputs.bufferAmount,
+  }), [safeInputs, freeBudget, effectiveDebtMo]);
 
   return (
     <ModuleLayout>
@@ -149,7 +214,7 @@ export default function WealthPlanner() {
             value={safeInputs.years}
             onChange={e => update('years', parseInt(e.target.value))}
           >
-            {[1, 2, 3, 5, 7, 10, 15, 20, 30].map(y => (
+            {[1, 2, 3, 5, 7, 10, 15, 20, 30, 50].map(y => (
               <option key={y} value={y}>{t('wealthPlanner.yearOption', { n: y })}</option>
             ))}
           </select>
@@ -167,10 +232,13 @@ export default function WealthPlanner() {
         </div>
         <div className={styles.sectionBody}>
           <CashFlowSection
+            grossIncome={safeInputs.grossIncome}
+            estimatedNet={estimatedNet}
             netIncome={safeInputs.netIncome}
             raiseRate={safeInputs.raiseRate}
             expenses={safeInputs.expenses}
-            allocated={safeInputs.revMo + safeInputs.extMo + safeInputs.debtMo + safeInputs.stockMo}
+            allocated={safeInputs.revMo + safeInputs.extMo + effectiveDebtMo + safeInputs.stockMo}
+            onGrossIncomeChange={v => update('grossIncome', v)}
             onNetIncomeChange={v => update('netIncome', v)}
             onRaiseRateChange={v => update('raiseRate', v)}
             onExpensesChange={v => update('expenses', v as Expense[])}
@@ -192,15 +260,20 @@ export default function WealthPlanner() {
             freeBudget={freeBudget}
             revMo={safeInputs.revMo}
             extMo={safeInputs.extMo}
-            debtMo={safeInputs.debtMo}
+            debtMo={effectiveDebtMo}
             stockMo={safeInputs.stockMo}
             bufferAmount={safeInputs.bufferAmount}
+            bufferOverflow={safeInputs.bufferOverflow}
             hasDebt={safeInputs.debtInit > 0}
-            onRevMoChange={v        => update('revMo',        v)}
-            onExtMoChange={v        => update('extMo',        v)}
-            onDebtMoChange={v       => update('debtMo',       v)}
-            onStockMoChange={v      => update('stockMo',      v)}
-            onBufferAmountChange={v => update('bufferAmount', v)}
+            debtPlanFixed={safeInputs.debtPlan !== 'manual'}
+            duoPaymentEnd={effectiveDebtMoEnd}
+            savingsGoalMonthly={savingsGoalMonthly}
+            onRevMoChange={v           => update('revMo',          v)}
+            onExtMoChange={v           => update('extMo',          v)}
+            onDebtMoChange={v          => update('debtMo',         v)}
+            onStockMoChange={v         => update('stockMo',        v)}
+            onBufferAmountChange={v    => update('bufferAmount',   v)}
+            onBufferOverflowChange={v  => update('bufferOverflow', v)}
           />
         </div>
       </section>

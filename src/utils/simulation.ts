@@ -4,6 +4,22 @@ export function monthlyRate(annualPct: number): number {
   return Math.pow(1 + annualPct / 100, 1 / 12) - 1;
 }
 
+// DUO repayment calculation (Netherlands student loans)
+// Threshold = 84% of WML (statutory minimum wage) — updated annually by DUO
+// Interest is added monthly as annualRate / 12 (simple, not compound)
+export const DUO_THRESHOLD = 22_452; // 84% of WML 2025 (€26,728/yr)
+export const DUO_RATE      = 0.04;   // 4% of income above threshold
+
+export function duoMonthlyPayment(annualGrossIncome: number, threshold = DUO_THRESHOLD): number {
+  return Math.max(0, (annualGrossIncome - threshold) * DUO_RATE / 12);
+}
+
+export function duoPlanYears(plan: 'manual' | 'sf15' | 'sf35'): number {
+  if (plan === 'sf15') return 15;
+  if (plan === 'sf35') return 35;
+  return 0; // manual: no forgiveness
+}
+
 interface ActiveDeposito {
   id: string;
   maturityMonth: number;
@@ -16,15 +32,20 @@ export function runSimulation(inputs: PlannerInputs): SimResult {
     years, revInit, extInit, debtInit, stockInit,
     revMo: revMoBase, extMo, debtMo, stockMo, raiseRate,
     revRate1, revRate2, revTier, extRate, debtRate, stockRate,
+    debtPlan = 'manual', grossIncome = 0,
+    bufferAmount = 0, bufferOverflow = 'ext',
     events,
   } = inputs;
 
-  const totalMonths = years * 12;
+  const totalMonths    = years * 12;
   const rR1 = monthlyRate(revRate1);
   const rR2 = monthlyRate(revRate2);
   const eR  = monthlyRate(extRate);
-  const dR  = monthlyRate(debtRate);
+  // DUO interest: annual rate / 12 (simple, not compound) — as per DUO policy
+  const dR  = debtPlan !== 'manual' ? debtRate / 100 / 12 : monthlyRate(debtRate);
   const sR  = monthlyRate(stockRate);
+  // Forgiveness: remaining debt is cancelled after the plan period
+  const forgivenessMonth = debtPlan !== 'manual' ? duoPlanYears(debtPlan) * 12 : null;
 
   let rev   = revInit;
   let ext   = extInit;
@@ -58,12 +79,17 @@ export function runSimulation(inputs: PlannerInputs): SimResult {
     depositoHist.push(Math.round(totalDep));
 
     if (m < totalMonths) {
-      const yearIndex      = Math.floor(m / 12);
-      const raiseFactor    = Math.pow(1 + raiseRate / 100, yearIndex);
+      const yearIndex        = Math.floor(m / 12);
+      const raiseFactor      = Math.pow(1 + raiseRate / 100, yearIndex);
       const curRevMoScaled   = revMoBase * raiseFactor;
       const curExtMoScaled   = extMo     * raiseFactor;
-      const curDebtMoScaled  = debtMo    * raiseFactor;
       const curStockMoScaled = stockMo   * raiseFactor;
+      // DUO payment: recalculate each year from actual gross income of that year.
+      // (grossIncome × raiseFactor − threshold) × 4% / 12
+      // Because the threshold is fixed, payment grows faster than income.
+      const curDebtMoScaled = debtPlan !== 'manual'
+        ? Math.max(0, (grossIncome * raiseFactor - DUO_THRESHOLD) * DUO_RATE / 12)
+        : debtMo * raiseFactor;
 
       let currentRevMo = curRevMoScaled;
 
@@ -85,19 +111,44 @@ export function runSimulation(inputs: PlannerInputs): SimResult {
 
       // Debt repayment
       if (debt > 0) {
-        debt = debt * (1 + dR) - curDebtMoScaled;
-        if (debt <= 0) {
+        // DUO forgiveness: write off remaining debt at end of plan period
+        if (forgivenessMonth !== null && m + 1 >= forgivenessMonth) {
           debt = 0;
           if (debtFreeMonth === null) debtFreeMonth = m + 1;
+          currentRevMo += curDebtMoScaled; // repayment freed up
+        } else {
+          debt = debt * (1 + dR) - curDebtMoScaled;
+          if (debt <= 0) {
+            debt = 0;
+            if (debtFreeMonth === null) debtFreeMonth = m + 1;
+          }
         }
       } else {
         currentRevMo += curDebtMoScaled;
       }
 
-      // Monthly contributions
-      rev   += currentRevMo;
-      ext   += curExtMoScaled;
-      stock += curStockMoScaled;
+      // Monthly contributions — once emergency fund is full, overflow goes to chosen account
+      let toRev      = currentRevMo;
+      let extOverflow   = 0;
+      let stockOverflow = 0;
+      if (bufferAmount > 0 && toRev > 0) {
+        if (rev >= bufferAmount) {
+          // Buffer already full — redirect everything
+          if (bufferOverflow === 'stock') stockOverflow = toRev;
+          else                            extOverflow   = toRev;
+          toRev = 0;
+        } else if (rev + toRev > bufferAmount) {
+          // This contribution fills the buffer — split at the threshold
+          const toFill = bufferAmount - rev;
+          const overflow = toRev - toFill;
+          toRev = toFill;
+          if (bufferOverflow === 'stock') stockOverflow = overflow;
+          else                            extOverflow   = overflow;
+        }
+      }
+      rev   += toRev;
+      ext   += curExtMoScaled + extOverflow;
+      stock += curStockMoScaled + stockOverflow;
 
       // Process timeline events that fire at the START of the NEXT month (= m+1)
       // Events are indexed by their fire month: (year-1)*12
@@ -124,6 +175,10 @@ export function runSimulation(inputs: PlannerInputs): SimResult {
             debt = 0;
             debtFreeMonth = m + 1;
           }
+        } else if (ev.type === 'savings_goal') {
+          // Deduct from current account only — never touches stocks
+          const deduct = Math.min(ev.amount, Math.max(rev, 0));
+          rev -= deduct;
         }
       }
     }
@@ -147,15 +202,23 @@ export function getDebtFreeResult(simResult: SimResult, inputs: PlannerInputs): 
 
   if (debtFreeMonth !== null) return monthsToResult(debtFreeMonth);
 
-  const { years, debtMo, debtRate, raiseRate } = inputs;
-  const dR = monthlyRate(debtRate);
+  const { years, debtMo, debtRate, debtPlan = 'manual', grossIncome = 0, raiseRate } = inputs;
+  const dR = debtPlan !== 'manual' ? debtRate / 100 / 12 : monthlyRate(debtRate);
+  const forgivenessMonth = debtPlan !== 'manual' ? duoPlanYears(debtPlan) * 12 : null;
   let simDebt    = simResult.finalDebt;
   let extraMonth = years * 12;
   const maxSim   = 600;
 
   while (simDebt > 0 && extraMonth < maxSim) {
-    const rf = Math.pow(1 + raiseRate / 100, Math.floor(extraMonth / 12));
-    simDebt = simDebt * (1 + dR) - debtMo * rf;
+    if (forgivenessMonth !== null && extraMonth >= forgivenessMonth) {
+      debtFreeMonth = extraMonth;
+      break;
+    }
+    const rf     = Math.pow(1 + raiseRate / 100, Math.floor(extraMonth / 12));
+    const payment = debtPlan !== 'manual'
+      ? Math.max(0, (grossIncome * rf - DUO_THRESHOLD) * DUO_RATE / 12)
+      : debtMo * rf;
+    simDebt = simDebt * (1 + dR) - payment;
     extraMonth++;
     if (simDebt <= 0) { debtFreeMonth = extraMonth; break; }
   }

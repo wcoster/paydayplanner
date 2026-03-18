@@ -21,8 +21,9 @@ export default function OptimizeSection({
   payload, currentRevMo, currentExtMo, currentDebtMo, currentStockMo, years, onApplyBest,
 }: Props) {
   const { t } = useTranslation();
-  const [state,  setState]  = useState<State>('idle');
-  const [result, setResult] = useState<OptimizeResult | null>(null);
+  const [state,   setState]   = useState<State>('idle');
+  const [result,  setResult]  = useState<OptimizeResult | null>(null);
+  const [applied, setApplied] = useState(false);
   const confettiRef = useRef<HTMLCanvasElement>(null);
   const workerRef   = useRef<Worker | null>(null);
 
@@ -30,6 +31,7 @@ export default function OptimizeSection({
     if (workerRef.current) workerRef.current.terminate();
     setState('computing');
     setResult(null);
+    setApplied(false);
 
     const worker = new OptimizerWorker();
     workerRef.current = worker;
@@ -37,9 +39,19 @@ export default function OptimizeSection({
       setResult(e.data);
       setState('done');
       if (confettiRef.current) launchConfetti(confettiRef.current);
-      setTimeout(() => setState('idle'), 3500);
     };
     worker.postMessage(payload);
+  }
+
+  function handleApply() {
+    if (!result) return;
+    setApplied(true);
+    onApplyBest(result);
+    setTimeout(() => {
+      setResult(null);
+      setState('idle');
+      setApplied(false);
+    }, 1800);
   }
 
   const diff        = result ? result.bestWealth - result.currentWealth : 0;
@@ -52,7 +64,13 @@ export default function OptimizeSection({
       ? t('wealthPlanner.optimize.found')
       : t('wealthPlanner.optimize.button');
 
-  const perMonth = t('wealthPlanner.optimize.perMonth');
+  // Build comparison rows
+  const rows = result ? [
+    { key: 'bank',    label: t('wealthPlanner.optimize.bank'),    cur: currentRevMo,   opt: result.bestRev   },
+    { key: 'deposit', label: t('wealthPlanner.optimize.deposit'), cur: currentExtMo,   opt: result.bestExt   },
+    { key: 'stocks',  label: t('wealthPlanner.optimize.stocks'),  cur: currentStockMo, opt: result.bestStock  },
+    { key: 'duo',     label: t('wealthPlanner.optimize.duo'),     cur: currentDebtMo,  opt: result.bestDebt  },
+  ] : [];
 
   return (
     <div className={styles.wrap}>
@@ -73,31 +91,50 @@ export default function OptimizeSection({
       </button>
 
       {result && (
-        <div className={styles.result}>
+        <div className={`${styles.result} ${applied ? styles.resultApplied : ''}`}>
           <div className={styles.resultTitle}>
-            {t('wealthPlanner.optimize.resultTitle', { budget: payload.totalBudget })}
+            {t('wealthPlanner.optimize.resultTitle', { budget: payload.totalBudget.toLocaleString() })}
           </div>
-          <div className={styles.resultGrid}>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.bank')}: <strong>€{result.bestRev}</strong>{perMonth}</div>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.current')}: €{currentRevMo}{perMonth}</div>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.deposit')}: <strong>€{result.bestExt}</strong>{perMonth}</div>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.current')}: €{currentExtMo}{perMonth}</div>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.stocks')}: <strong>€{result.bestStock}</strong>{perMonth}</div>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.current')}: €{currentStockMo}{perMonth}</div>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.duo')}: <strong>€{result.bestDebt}</strong>{perMonth}</div>
-            <div className={styles.resultItem}>{t('wealthPlanner.optimize.current')}: €{currentDebtMo}{perMonth}</div>
+
+          <div className={styles.compareList}>
+            {rows.map(row => {
+              const delta = row.opt - row.cur;
+              return (
+                <div key={row.key} className={styles.compareRow}>
+                  <span className={styles.compareLabel}>{row.label}</span>
+                  <div className={styles.compareValues}>
+                    <span className={styles.curVal}>€{row.cur}</span>
+                    <span className={`${styles.arrow} ${delta > 0 ? styles.arrowUp : delta < 0 ? styles.arrowDown : styles.arrowFlat}`}>
+                      {delta > 0 ? '↑' : delta < 0 ? '↓' : '–'}
+                    </span>
+                    <span className={`${styles.optVal} ${delta > 0 ? styles.optUp : delta < 0 ? styles.optDown : ''}`}>
+                      €{row.opt}
+                    </span>
+                    {delta !== 0 && (
+                      <span className={`${styles.delta} ${delta > 0 ? styles.deltaPos : styles.deltaNeg}`}>
+                        {delta > 0 ? '+' : ''}€{delta}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+
           <div className={styles.resultDiff}>
             {diff > 0
               ? t('wealthPlanner.optimize.gainText', { amount: diff.toLocaleString(), years })
-              : diff === 0
-                ? t('wealthPlanner.optimize.optimal')
-                : `€${Math.abs(diff).toLocaleString()}`
+              : t('wealthPlanner.optimize.optimal')
             }
           </div>
+
           {diff !== 0 && (
-            <button className={styles.applyBtn} onClick={() => onApplyBest(result!)}>
-              {t('wealthPlanner.optimize.apply')}
+            <button
+              className={`${styles.applyBtn} ${applied ? styles.applyDone : ''}`}
+              onClick={handleApply}
+              disabled={applied}
+            >
+              {applied ? '✓ ' + t('wealthPlanner.optimize.applied') : t('wealthPlanner.optimize.apply')}
             </button>
           )}
         </div>

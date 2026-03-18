@@ -1,5 +1,7 @@
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { PlannerInputs } from '../../types';
+import type { DuoPlan, PlannerInputs } from '../../types';
+import { duoPlanYears, DUO_THRESHOLD } from '../../utils/simulation';
 import InputGroup from '../ui/InputGroup/InputGroup';
 import styles from './InputGrid.module.css';
 
@@ -9,7 +11,11 @@ interface Props {
 }
 
 export default function InputGrid({ inputs, onChange }: Props) {
-  const { t } = useTranslation();
+  const { t }   = useTranslation();
+  const planId  = useId();
+
+  const isDuo          = inputs.debtPlan !== 'manual';
+  const forgivenessYrs = isDuo ? duoPlanYears(inputs.debtPlan) : null;
 
   return (
     <div className={styles.grid}>
@@ -82,6 +88,24 @@ export default function InputGrid({ inputs, onChange }: Props) {
       {/* Student loan */}
       <div className={`${styles.section} ${styles.debt}`}>
         <h3 className={styles.heading}>{t('wealthPlanner.accounts.duo')}</h3>
+
+        {/* Plan selector */}
+        <div className={styles.planRow}>
+          <label htmlFor={planId} className={styles.planLabel}>
+            {t('wealthPlanner.accounts.duoPlan')}
+          </label>
+          <select
+            id={planId}
+            className={styles.planSelect}
+            value={inputs.debtPlan}
+            onChange={e => onChange('debtPlan', e.target.value as DuoPlan)}
+          >
+            <option value="manual">{t('wealthPlanner.accounts.duoPlanManual')}</option>
+            <option value="sf15">{t('wealthPlanner.accounts.duoPlanSf15')}</option>
+            <option value="sf35">{t('wealthPlanner.accounts.duoPlanSf35')}</option>
+          </select>
+        </div>
+
         <InputGroup
           label={t('wealthPlanner.accounts.debtAmount')}
           value={inputs.debtInit}
@@ -96,7 +120,19 @@ export default function InputGrid({ inputs, onChange }: Props) {
           variant="debt"
           onChange={v => onChange('debtRate', v)}
         />
-        <p className={styles.note}>{t('wealthPlanner.accounts.duoNote')}</p>
+
+        {isDuo ? (
+          <>
+            <p className={styles.duoForgivenessRow}>
+              {t('wealthPlanner.accounts.duoForgiveness', { years: forgivenessYrs })}
+            </p>
+            <p className={styles.note}>
+              {t('wealthPlanner.accounts.duoPlanNote', { threshold: DUO_THRESHOLD.toLocaleString() })}
+            </p>
+          </>
+        ) : (
+          <p className={styles.note}>{t('wealthPlanner.accounts.duoNote')}</p>
+        )}
       </div>
     </div>
   );

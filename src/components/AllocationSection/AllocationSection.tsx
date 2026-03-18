@@ -5,25 +5,32 @@ import type { ChartData, ChartOptions } from 'chart.js';
 import styles from './AllocationSection.module.css';
 
 interface Props {
-  freeBudget:           number;
-  revMo:                number;
-  extMo:                number;
-  debtMo:               number;
-  stockMo:              number;
-  bufferAmount:         number;
-  hasDebt:              boolean;
-  onRevMoChange:        (v: number) => void;
-  onExtMoChange:        (v: number) => void;
-  onDebtMoChange:       (v: number) => void;
-  onStockMoChange:      (v: number) => void;
-  onBufferAmountChange: (v: number) => void;
+  freeBudget:              number;
+  revMo:                   number;
+  extMo:                   number;
+  debtMo:                  number;
+  stockMo:                 number;
+  bufferAmount:            number;
+  bufferOverflow:          'ext' | 'stock';
+  hasDebt:                 boolean;
+  debtPlanFixed?:          boolean;
+  duoPaymentEnd?:          number | null;
+  savingsGoalMonthly?:     number;
+  onRevMoChange:           (v: number) => void;
+  onExtMoChange:           (v: number) => void;
+  onDebtMoChange:          (v: number) => void;
+  onStockMoChange:         (v: number) => void;
+  onBufferAmountChange:    (v: number) => void;
+  onBufferOverflowChange:  (v: 'ext' | 'stock') => void;
 }
 
-interface AllocItem { key: string; label: string; value: number; color: string; onChange: (v: number) => void; }
+interface AllocItem { key: string; label: string; value: number; color: string; onChange: (v: number) => void; readOnly?: boolean; endValue?: number | null; }
 
 export default function AllocationSection({
-  freeBudget, revMo, extMo, debtMo, stockMo, bufferAmount, hasDebt,
-  onRevMoChange, onExtMoChange, onDebtMoChange, onStockMoChange, onBufferAmountChange,
+  freeBudget, revMo, extMo, debtMo, stockMo, bufferAmount, bufferOverflow, hasDebt,
+  debtPlanFixed = false, duoPaymentEnd = null, savingsGoalMonthly = 0,
+  onRevMoChange, onExtMoChange, onDebtMoChange, onStockMoChange,
+  onBufferAmountChange, onBufferOverflowChange,
 }: Props) {
   const { t } = useTranslation();
 
@@ -35,7 +42,7 @@ export default function AllocationSection({
     { key: 'bank',    label: t('wealthPlanner.allocation.bank'),    value: revMo,   color: 'rgba(96,165,250,0.85)',  onChange: onRevMoChange },
     { key: 'deposit', label: t('wealthPlanner.allocation.deposit'), value: extMo,   color: 'rgba(74,222,128,0.85)',  onChange: onExtMoChange },
     { key: 'stocks',  label: t('wealthPlanner.allocation.stocks'),  value: stockMo, color: 'rgba(167,139,250,0.85)', onChange: onStockMoChange },
-    ...(hasDebt ? [{ key: 'duo', label: t('wealthPlanner.allocation.duo'), value: debtMo, color: 'rgba(248,113,113,0.85)', onChange: onDebtMoChange }] : []),
+    ...(hasDebt ? [{ key: 'duo', label: t('wealthPlanner.allocation.duo'), value: debtMo, color: 'rgba(248,113,113,0.85)', onChange: onDebtMoChange, readOnly: debtPlanFixed, endValue: debtPlanFixed ? duoPaymentEnd : null }] : []),
   ];
 
   const chartItems = [...allocs];
@@ -104,6 +111,14 @@ export default function AllocationSection({
           ))}
         </div>
 
+        {savingsGoalMonthly > 0 && (
+          <div className={styles.goalEarmarkRow}>
+            <span className={styles.goalEarmarkIcon}>🏠</span>
+            <span className={styles.goalEarmarkLabel}>{t('wealthPlanner.timeline.goalEarmark')}</span>
+            <span className={styles.goalEarmarkVal}>€{Math.round(savingsGoalMonthly).toLocaleString()}/mo</span>
+          </div>
+        )}
+
         {remaining > 0 && (
           <div className={styles.unallocRow}>
             <div className={styles.dot} style={{ background: 'rgba(251,191,36,0.5)' }} />
@@ -112,7 +127,12 @@ export default function AllocationSection({
           </div>
         )}
 
-        <BufferInput value={bufferAmount} onChange={onBufferAmountChange} />
+        <BufferInput
+          value={bufferAmount}
+          overflow={bufferOverflow}
+          onChange={onBufferAmountChange}
+          onOverflowChange={onBufferOverflowChange}
+        />
       </div>
     </div>
   );
@@ -142,6 +162,23 @@ function BudgetBar({ allocated, freeBudget, overBudget }: { allocated: number; f
 function AllocRow({ item }: { item: AllocItem }) {
   const { t } = useTranslation();
   const id    = useId();
+
+  if (item.readOnly) {
+    return (
+      <div className={`${styles.allocRow} ${styles.allocRowFixed}`}>
+        <div className={styles.dot} style={{ background: item.color }} />
+        <label htmlFor={id} className={styles.allocLabel}>{item.label}</label>
+        <div className={styles.allocInputWrap}>
+          <span className={styles.euro}>€</span>
+          <span className={`${styles.allocInput} ${styles.allocInputFixed}`}>
+            {item.value.toLocaleString()}
+          </span>
+          <span className={styles.mo}>/mo</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.allocRow}>
       <div className={styles.dot} style={{ background: item.color }} />
@@ -164,23 +201,47 @@ function AllocRow({ item }: { item: AllocItem }) {
   );
 }
 
-function BufferInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const { t } = useTranslation();
-  const id    = useId();
+function BufferInput({
+  value, overflow, onChange, onOverflowChange,
+}: {
+  value: number;
+  overflow: 'ext' | 'stock';
+  onChange: (v: number) => void;
+  onOverflowChange: (v: 'ext' | 'stock') => void;
+}) {
+  const { t }      = useTranslation();
+  const id         = useId();
+  const overflowId = useId();
   return (
     <div className={styles.bufferRow}>
-      <label htmlFor={id} className={styles.bufferLabel}>{t('wealthPlanner.allocation.buffer')}</label>
-      <div className={styles.allocInputWrap}>
-        <span className={styles.euro}>€</span>
-        <input
-          id={id}
-          type="number"
-          value={value}
-          step={500}
-          min={0}
-          onChange={e => onChange(parseFloat(e.target.value) || 0)}
-          className={styles.allocInput}
-        />
+      <div className={styles.bufferTopRow}>
+        <label htmlFor={id} className={styles.bufferLabel}>{t('wealthPlanner.allocation.buffer')}</label>
+        <div className={styles.allocInputWrap}>
+          <span className={styles.euro}>€</span>
+          <input
+            id={id}
+            type="number"
+            value={value}
+            step={500}
+            min={0}
+            onChange={e => onChange(parseFloat(e.target.value) || 0)}
+            className={styles.allocInput}
+          />
+        </div>
+      </div>
+      <div className={styles.overflowRow}>
+        <label htmlFor={overflowId} className={styles.overflowLabel}>
+          {t('wealthPlanner.allocation.overflowLabel')}
+        </label>
+        <select
+          id={overflowId}
+          className={styles.overflowSelect}
+          value={overflow}
+          onChange={e => onOverflowChange(e.target.value as 'ext' | 'stock')}
+        >
+          <option value="ext">{t('wealthPlanner.allocation.deposit')}</option>
+          <option value="stock">{t('wealthPlanner.allocation.stocks')}</option>
+        </select>
       </div>
       <p className={styles.bufferNote}>{t('wealthPlanner.allocation.bufferNote')}</p>
     </div>

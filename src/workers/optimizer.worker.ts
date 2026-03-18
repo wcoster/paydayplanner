@@ -8,6 +8,7 @@ self.onmessage = (e: MessageEvent<OptimizePayload>) => {
     rR1, rR2, revTier, eR, dR, sR,
     totalBudget, simMonths, raiseRate,
     curRevMo, curExtMo, curDebtMo, curStockMo,
+    bufferAmount,
   } = e.data;
 
   const currentWealth = simulate(
@@ -18,11 +19,21 @@ self.onmessage = (e: MessageEvent<OptimizePayload>) => {
   );
 
   const step = totalBudget > 3000 ? 100 : totalBudget > 1500 ? 50 : 20;
+
+  // Minimum monthly to current account: enough to fill the buffer within the plan
+  // period (capped at 30% of budget so it doesn't dominate small budgets).
+  const bufferGap = Math.max(0, bufferAmount - revStart);
+  const rawRevMin = simMonths > 0 ? bufferGap / simMonths : 0;
+  const revMin    = Math.min(
+    Math.ceil(rawRevMin / step) * step,
+    Math.floor(totalBudget * 0.30 / step) * step,
+  );
+
   let bestWealth = -Infinity;
   let bestRev = 0, bestExt = 0, bestDebt = 0, bestStock = 0;
 
   for (let d = 0; d <= totalBudget; d += step) {
-    for (let r = 0; r <= totalBudget - d; r += step) {
+    for (let r = revMin; r <= totalBudget - d; r += step) {
       for (let s = 0; s <= totalBudget - d - r; s += step) {
         const ex = totalBudget - d - r - s;
         const w  = simulate(

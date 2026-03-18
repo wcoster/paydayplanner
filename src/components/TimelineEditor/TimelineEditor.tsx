@@ -11,8 +11,8 @@ interface Props {
 
 const EMPTY_FORM = {
   year: 1,
-  type: 'deposito' as TimelineEventType,
-  amount: 10000,
+  type: 'savings_goal' as TimelineEventType,
+  amount: 20000,
   label: '',
   depositoDuration: 3,
   depositoRate: 3.5,
@@ -84,6 +84,7 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
     deposito:        styles.tagDeposito,
     stock_lump:      styles.tagStock,
     extra_repayment: styles.tagRepayment,
+    savings_goal:    styles.tagGoal,
   }[type]);
 
   return (
@@ -111,6 +112,7 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
           <div className={styles.formRow}>
             <label className={styles.formLabel} htmlFor={fid('type')}>{t('wealthPlanner.timeline.form.type')}</label>
             <select id={fid('type')} value={form.type} onChange={e => updateForm('type', e.target.value as TimelineEventType)} className={styles.formSelect}>
+              <option value="savings_goal">{t('wealthPlanner.timeline.types.savings_goal')}</option>
               <option value="deposito">{t('wealthPlanner.timeline.types.deposito')}</option>
               <option value="stock_lump">{t('wealthPlanner.timeline.types.stock_lump')}</option>
               <option value="extra_repayment">{t('wealthPlanner.timeline.types.extra_repayment')}</option>
@@ -146,8 +148,30 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
 
           <div className={styles.formRow}>
             <label className={styles.formLabel} htmlFor={fid('label')}>{t('wealthPlanner.timeline.form.label')}</label>
-            <input id={fid('label')} type="text" value={form.label} placeholder={t('wealthPlanner.timeline.form.labelPlaceholder')} onChange={e => updateForm('label', e.target.value)} className={styles.formInput} />
+            <input
+              id={fid('label')}
+              type="text"
+              value={form.label}
+              placeholder={t(form.type === 'savings_goal'
+                ? 'wealthPlanner.timeline.form.goalLabelPlaceholder'
+                : 'wealthPlanner.timeline.form.labelPlaceholder')}
+              onChange={e => updateForm('label', e.target.value)}
+              className={styles.formInput}
+            />
           </div>
+
+          {form.type === 'savings_goal' && form.amount > 0 && form.year > 0 && (
+            <div className={styles.goalPreview}>
+              <span className={styles.goalPreviewIcon}>🏠</span>
+              <span>
+                {t('wealthPlanner.timeline.goalMonthly', {
+                  amount: `€${Math.round(form.amount / (form.year * 12)).toLocaleString()}`,
+                })}
+                {' — '}
+                {t('wealthPlanner.timeline.goalHint', { year: form.year })}
+              </span>
+            </div>
+          )}
 
           <div className={styles.formActions}>
             <button className={styles.cancelBtn} onClick={handleCancel}>{t('wealthPlanner.timeline.form.cancel')}</button>
@@ -169,6 +193,13 @@ export default function TimelineEditor({ events, maxYear, onChange }: Props) {
               <span className={styles.amount}>€{ev.amount.toLocaleString()}</span>
               {ev.type === 'deposito' && ev.depositoDuration && ev.depositoRate !== undefined && (
                 <span className={styles.detail}>{ev.depositoDuration}{t('wealthPlanner.timeline.form.years')} @ {ev.depositoRate}%</span>
+              )}
+              {ev.type === 'savings_goal' && (
+                <span className={styles.detail}>
+                  {t('wealthPlanner.timeline.goalMonthly', {
+                    amount: `€${Math.round(ev.amount / (ev.year * 12)).toLocaleString()}`,
+                  })}
+                </span>
               )}
               {ev.label && <span className={styles.eventLabel}>{ev.label}</span>}
             </div>

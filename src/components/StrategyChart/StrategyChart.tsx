@@ -23,6 +23,9 @@ export default function StrategyChart({ simResult, years, bufferAmount }: Props)
   }, []);
   const { wealthHist, assetHist, debtHist, stockHist, depositoHist } = simResult;
 
+  // Liquid savings = current account + savings account + term deposits (no stocks)
+  const liquidHist = assetHist.map((a, i) => a - stockHist[i]);
+
   const labels = wealthHist.map((_, i) =>
     i % 12 === 0 ? t('wealthPlanner.yearOption', { n: i / 12 }) : ''
   );
@@ -43,7 +46,7 @@ export default function StrategyChart({ simResult, years, bufferAmount }: Props)
     },
     {
       label: t('wealthPlanner.chart.savings'),
-      data: assetHist,
+      data: liquidHist,
       borderColor: '#60a5fa',
       borderDash: [4, 4],
       tension: 0.35,

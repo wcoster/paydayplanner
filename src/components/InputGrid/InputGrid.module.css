@@ -35,6 +35,59 @@
 
 .note { font-size: 0.72rem; color: var(--text-muted); font-style: italic; margin-top: var(--space-3); line-height: 1.5; }
 
+/* DUO plan selector */
+.planRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--space-3);
+}
+.planLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.planSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  padding: 8px 32px 8px 10px;
+  background: var(--surface-input);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ef4444' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.planSelect:focus { border-color: var(--color-danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 15%, transparent); }
+.planSelect option { background: var(--option-bg); color: var(--text-primary); }
+
+/* DUO computed payment display */
+.duoPayRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
+  margin-top: var(--space-2);
+}
+.duoPayLabel { font-size: 0.78rem; color: var(--text-secondary); }
+.duoPayValue { font-size: 0.95rem; font-weight: 700; color: var(--color-danger-light); font-family: var(--font-display); }
+.duoPayEnd   { font-size: 0.82rem; font-weight: 500; opacity: 0.75; }
+.duoForgivenessRow {
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--color-danger-light) 80%, white);
+  margin-top: var(--space-2);
+  font-style: italic;
+}
+
 @media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) {
   .grid    { grid-template-columns: 1fr; gap: var(--space-3); }

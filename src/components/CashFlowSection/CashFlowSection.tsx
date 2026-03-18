@@ -5,13 +5,16 @@ import { CATEGORY_ICONS, EXPENSE_CATEGORIES } from '../../types';
 import styles from './CashFlowSection.module.css';
 
 interface Props {
-  netIncome:          number;
-  raiseRate:          number;
-  expenses:           Expense[];
-  allocated:          number;   // revMo + extMo + debtMo + stockMo
-  onNetIncomeChange:  (v: number) => void;
-  onRaiseRateChange:  (v: number) => void;
-  onExpensesChange:   (expenses: Expense[]) => void;
+  grossIncome:         number;
+  estimatedNet:        number;   // Dutch 2025 tax estimate for hint
+  netIncome:           number;
+  raiseRate:           number;
+  expenses:            Expense[];
+  allocated:           number;   // revMo + extMo + debtMo + stockMo
+  onGrossIncomeChange: (v: number) => void;
+  onNetIncomeChange:   (v: number) => void;
+  onRaiseRateChange:   (v: number) => void;
+  onExpensesChange:    (expenses: Expense[]) => void;
 }
 
 function newId() {
@@ -19,10 +22,11 @@ function newId() {
 }
 
 export default function CashFlowSection({
-  netIncome, raiseRate, expenses, allocated,
-  onNetIncomeChange, onRaiseRateChange, onExpensesChange,
+  grossIncome, estimatedNet, netIncome, raiseRate, expenses, allocated,
+  onGrossIncomeChange, onNetIncomeChange, onRaiseRateChange, onExpensesChange,
 }: Props) {
   const { t }       = useTranslation();
+  const grossId     = useId();
   const incomeId    = useId();
   const raiseId     = useId();
   const [adding, setAdding] = useState(false);
@@ -50,23 +54,28 @@ export default function CashFlowSection({
 
   return (
     <section className={styles.section}>
-      {/* ── Income row ── */}
-      <div className={styles.incomeRow}>
-        <div className={styles.incomeField}>
-          <label htmlFor={incomeId} className={styles.fieldLabel}>
-            {t('wealthPlanner.cashFlow.netIncome')}
+      {/* ── Gross income row (primary) ── */}
+      <div className={styles.grossRow}>
+        <div className={styles.grossField}>
+          <label htmlFor={grossId} className={styles.fieldLabel}>
+            {t('wealthPlanner.cashFlow.grossIncome')}
           </label>
           <div className={styles.inputPre}>
             <span className={styles.pre}>€</span>
             <input
-              id={incomeId}
+              id={grossId}
               type="number"
-              value={netIncome}
-              step={50}
-              onChange={e => onNetIncomeChange(parseFloat(e.target.value) || 0)}
-              className={styles.numInput}
+              value={grossIncome}
+              step={500}
+              min={0}
+              onChange={e => onGrossIncomeChange(parseFloat(e.target.value) || 0)}
+              className={`${styles.numInput} ${styles.grossNum}`}
             />
+            <span className={styles.grossUnit}>/yr</span>
           </div>
+          <p className={styles.taxHint}>
+            {t('wealthPlanner.cashFlow.taxHint', { net: estimatedNet.toLocaleString() })}
+          </p>
         </div>
 
         <div className={styles.raiseField}>
@@ -85,6 +94,27 @@ export default function CashFlowSection({
               className={`${styles.numInput} ${styles.slim}`}
             />
             <span className={styles.suf}>%/yr</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Net income row ── */}
+      <div className={styles.incomeRow}>
+        <div className={styles.incomeField}>
+          <label htmlFor={incomeId} className={styles.fieldLabel}>
+            {t('wealthPlanner.cashFlow.netIncome')}
+          </label>
+          <div className={styles.inputPre}>
+            <span className={styles.pre}>€</span>
+            <input
+              id={incomeId}
+              type="number"
+              value={netIncome}
+              step={50}
+              onChange={e => onNetIncomeChange(parseFloat(e.target.value) || 0)}
+              className={styles.numInput}
+            />
+            <span className={styles.grossUnit}>/mo</span>
           </div>
         </div>
       </div>
@@ -198,6 +228,7 @@ function ExpenseRow({ expense, onUpdate, onDelete }: {
         id={labelId}
         type="text"
         value={expense.label}
+        placeholder={t(`wealthPlanner.cashFlow.categories.${expense.category}`)}
         onChange={e => onUpdate({ label: e.target.value })}
         className={styles.expLabel}
         aria-label={t('wealthPlanner.cashFlow.expenseLabel')}
